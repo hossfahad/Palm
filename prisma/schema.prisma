@@ -10,6 +10,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Organization {
+  id            String    @id @default(cuid())
+  name          String
+  primaryColor  String    @default("#7C8B7D")
+  secondaryColor String   @default("#A65D57")
+  logoUrl       String?
+  faviconUrl    String?
+  useDarkMode   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  users         User[]
+}
+
 model User {
   id                  String    @id @default(cuid())
   clerkId            String    @unique
@@ -21,7 +34,11 @@ model User {
   has2FAEnabled      Boolean   @default(false)
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+  organizationId     String
+  organization       Organization @relation(fields: [organizationId], references: [id])
   auditLogs          AuditLog[]
+
+  @@index([organizationId])
 }
 
 model AuditLog {

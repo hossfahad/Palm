@@ -12,7 +12,11 @@ export type AuditEventType =
   | 'account_unlocked'
   | 'user_created'
   | 'user_deleted'
-  | 'user_updated';
+  | 'user_updated'
+  | 'branding_updated'
+  | 'theme_updated'
+  | 'logo_updated'
+  | 'favicon_updated';
 
 export interface AuditEvent {
   eventType: AuditEventType;
@@ -87,6 +91,19 @@ class AuditLogger {
     eventType: Extract<
       AuditEventType,
       'user_created' | 'user_deleted' | 'user_updated' | 'role_change'
+    >,
+    userId: string,
+    userRole: UserRole,
+    request: Request,
+    metadata?: Record<string, unknown>
+  ): Promise<void> {
+    await this.log(eventType, userId, userRole, request, metadata);
+  }
+
+  public async logBrandingEvent(
+    eventType: Extract<
+      AuditEventType,
+      'branding_updated' | 'theme_updated' | 'logo_updated' | 'favicon_updated'
     >,
     userId: string,
     userRole: UserRole,
