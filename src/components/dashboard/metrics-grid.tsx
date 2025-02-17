@@ -1,83 +1,98 @@
 'use client';
 
-import { Grid, Paper, Stack, Text, Group } from '@mantine/core';
-import { IconTrendingUp, IconTrendingDown } from '@tabler/icons-react';
+import { Grid, Paper, Text, Group, Stack, ThemeIcon } from '@mantine/core';
+import { IconArrowUpRight, IconArrowDownRight } from '@tabler/icons-react';
 import { formatCurrency } from '@/lib/utils/format';
-import { DashboardMetrics } from '@/types/dashboard';
-
-interface MetricCardProps {
-  label: string;
-  value: string | number;
-  change?: number;
-  loading?: boolean;
-}
-
-function MetricCard({ label, value, change, loading }: MetricCardProps) {
-  const isPositive = change && change > 0;
-  const changeColor = isPositive ? 'green' : 'red';
-  const Icon = isPositive ? IconTrendingUp : IconTrendingDown;
-
-  return (
-    <Paper p="md" radius="md" withBorder>
-      <Stack gap="xs">
-        <Text size="sm" c="dimmed">
-          {label}
-        </Text>
-        <Group justify="space-between" align="flex-end">
-          <Text size="xl" fw={700}>
-            {value}
-          </Text>
-          {change && (
-            <Group gap="xs" c={changeColor}>
-              <Icon size={20} stroke={1.5} />
-              <Text size="sm" fw={500}>
-                {Math.abs(change)}%
-              </Text>
-            </Group>
-          )}
-        </Group>
-      </Stack>
-    </Paper>
-  );
-}
 
 interface MetricsGridProps {
-  data: DashboardMetrics;
-  loading?: boolean;
+  data: {
+    totalDonations: number;
+    activeDAFs: number;
+    pendingGrants: number;
+    metrics: {
+      donationGrowth: number;
+      averageGrant: number;
+      totalImpact: number;
+    };
+  };
+  loading: boolean;
 }
 
 export function MetricsGrid({ data, loading }: MetricsGridProps) {
+  const metrics = [
+    {
+      title: 'Total Donations',
+      value: formatCurrency(data.totalDonations),
+      change: data.metrics.donationGrowth,
+      changeLabel: 'from last month',
+    },
+    {
+      title: 'Active DAFs',
+      value: data.activeDAFs,
+      suffix: 'accounts',
+    },
+    {
+      title: 'Pending Grants',
+      value: data.pendingGrants,
+      suffix: 'requests',
+    },
+    {
+      title: 'Average Grant',
+      value: formatCurrency(data.metrics.averageGrant),
+    },
+  ];
+
   return (
-    <Grid>
-      <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-        <MetricCard
-          label="Total Donations"
-          value={formatCurrency(data.totalDonations)}
-          change={data.metrics.donationGrowth}
-          loading={loading}
-        />
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-        <MetricCard
-          label="Active DAFs"
-          value={data.activeDAFs}
-          loading={loading}
-        />
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-        <MetricCard
-          label="Pending Grants"
-          value={data.pendingGrants}
-          loading={loading}
-        />
-      </Grid.Col>
-      <Grid.Col span={{ base: 12, sm: 6, md: 3 }}>
-        <MetricCard
-          label="Average Grant"
-          value={formatCurrency(data.metrics.averageGrant)}
-          loading={loading}
-        />
-      </Grid.Col>
+    <Grid gutter="xl">
+      {metrics.map((metric, index) => (
+        <Grid.Col key={index} span={{ base: 12, xs: 6, md: 3 }}>
+          <Paper withBorder p="lg" radius="md" h="100%">
+            <Stack gap="md" justify="space-between" h="100%">
+              <Text size="sm" c="dimmed" tt="uppercase" fw={500}>
+                {metric.title}
+              </Text>
+              
+              <Stack gap="xs">
+                <Group justify="space-between" align="flex-end" wrap="nowrap">
+                  <Text size="xl" fw={700} style={{ lineHeight: 1 }}>
+                    {metric.value}
+                  </Text>
+                  {metric.suffix && (
+                    <Text size="sm" c="dimmed">
+                      {metric.suffix}
+                    </Text>
+                  )}
+                </Group>
+
+                {metric.change && (
+                  <Group gap="xs" wrap="nowrap">
+                    <ThemeIcon
+                      color={metric.change > 0 ? 'teal' : 'red'}
+                      variant="light"
+                      size="sm"
+                      radius="sm"
+                    >
+                      {metric.change > 0 ? (
+                        <IconArrowUpRight size={16} stroke={1.5} />
+                      ) : (
+                        <IconArrowDownRight size={16} stroke={1.5} />
+                      )}
+                    </ThemeIcon>
+                    <Text size="sm" c={metric.change > 0 ? 'teal' : 'red'}>
+                      {Math.abs(metric.change)}%
+                    </Text>
+                    {metric.changeLabel && (
+                      <Text size="sm" c="dimmed" truncate>
+                        {metric.changeLabel}
+                      </Text>
+                    )}
+                  </Group>
+                )}
+              </Stack>
+            </Stack>
+          </Paper>
+        </Grid.Col>
+      ))}
     </Grid>
   );
 } 
