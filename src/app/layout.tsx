@@ -9,13 +9,12 @@ import '@mantine/dropzone/styles.css';
 import '@mantine/spotlight/styles.css';
 import './globals.css';
 import { Providers } from './providers';
-import { ClerkProvider } from '@clerk/nextjs';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Palm Philanthropy',
-  description: 'Comprehensive philanthropy management platform for family offices',
+  description: 'Comprehensive philanthropy management platform',
 };
 
 export default function RootLayout({
@@ -28,11 +27,9 @@ export default function RootLayout({
       <head>
         <ColorSchemeScript defaultColorScheme="light" />
       </head>
-      <ClerkProvider>
-        <body className={inter.className}>
-          <Providers>{children}</Providers>
-        </body>
-      </ClerkProvider>
+      <body className={inter.className}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 } 

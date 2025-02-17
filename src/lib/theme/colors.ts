@@ -1,9 +1,9 @@
 export const colors = {
   // Primary Colors
   sage: [
-    '#F4F6F4', // 0: Lightest sage
-    '#E6E9E6', // 1: Very light sage
-    '#CED3CE', // 2: Light sage
+    '#F9F9F6', // 0: Cloud White (background)
+    '#F6F4F0', // 1: Ivory (secondary background)
+    '#E6E8E6', // 2: Light border
     '#A3B0A4', // 3: Muted sage (accent hover)
     '#7C8B7D', // 4: Primary sage (accent)
     '#5B664C', // 5: Olive (success)

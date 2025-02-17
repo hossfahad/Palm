@@ -45,6 +45,10 @@ export const theme = createTheme({
       styles: {
         root: {
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          backgroundColor: colors.sage[4],
+          '&:hover': {
+            backgroundColor: colors.sage[3],
+          },
         },
       },
     },
@@ -52,10 +56,29 @@ export const theme = createTheme({
       defaultProps: {
         radius: 'md',
       },
+      styles: {
+        root: {
+          backgroundColor: colors.gray[0],
+          border: `1px solid ${colors.gray[2]}`,
+        },
+      },
     },
     Paper: {
       defaultProps: {
         radius: 'md',
+      },
+      styles: {
+        root: {
+          backgroundColor: colors.gray[0],
+          border: `1px solid ${colors.gray[2]}`,
+        },
+      },
+    },
+    AppShell: {
+      styles: {
+        main: {
+          backgroundColor: colors.gray[1],
+        },
       },
     },
   },

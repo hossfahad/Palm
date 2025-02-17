@@ -1,46 +1,30 @@
 'use client';
 
-import { Group, ActionIcon, Text, Avatar, Menu } from '@mantine/core';
-import { useUser, UserButton } from '@clerk/nextjs';
-import { IconBell, IconSearch } from '@tabler/icons-react';
-import { openSpotlight } from '@mantine/spotlight';
+import { Group } from '@mantine/core';
+import { ClientSelector } from '@/components/client/client-selector';
+import { ClientSummary } from '@/types/client';
 
-export function DashboardHeader() {
-  const { user } = useUser();
+interface DashboardHeaderProps {
+  clients: ClientSummary[];
+  selectedClientId: string | null;
+  onClientChange: (clientId: string) => void;
+  onAddClient: (name: string, email: string) => Promise<void>;
+}
 
+export function DashboardHeader({
+  clients,
+  selectedClientId,
+  onClientChange,
+  onAddClient,
+}: DashboardHeaderProps) {
   return (
-    <Group justify="space-between" style={{ flex: 1 }}>
-      <Text size="lg" fw={500}>
-        Palm Philanthropy
-      </Text>
-
-      <Group gap="sm">
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          onClick={() => openSpotlight()}
-          title="Search (⌘K)"
-        >
-          <IconSearch size={20} stroke={1.5} />
-        </ActionIcon>
-        
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          title="Notifications"
-        >
-          <IconBell size={20} stroke={1.5} />
-        </ActionIcon>
-
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: 'w-8 h-8',
-              userButtonPopup: 'min-w-[240px]',
-            },
-          }}
-        />
-      </Group>
+    <Group justify="flex-end" p="md">
+      <ClientSelector
+        clients={clients}
+        selectedClientId={selectedClientId}
+        onClientChange={onClientChange}
+        onAddClient={onAddClient}
+      />
     </Group>
   );
 } 

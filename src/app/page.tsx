@@ -1,12 +1,7 @@
-import { auth } from '@clerk/nextjs';
 import { redirect } from 'next/navigation';
 
-export default async function HomePage() {
-  const { userId } = auth();
+export default function HomePage() {
+  redirect('/dashboard');
+}
 
-  if (userId) {
-    redirect('/dashboard');
-  } else {
-    redirect('/sign-in');
-  }
-} 
+process.env.DEEPSEEK_API_KEY 

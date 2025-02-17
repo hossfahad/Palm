@@ -8,10 +8,11 @@ export function DashboardBreadcrumbs() {
   const pathname = usePathname();
   const paths = pathname.split('/').filter(Boolean);
 
-  const items = paths.map((path, index) => {
-    const href = `/${paths.slice(0, index + 1).join('/')}`;
+  // Skip the dashboard path and only show subsequent paths
+  const items = paths.slice(1).map((path, index) => {
+    const href = `/${paths.slice(0, index + 2).join('/')}`;
     const label = path.charAt(0).toUpperCase() + path.slice(1);
-    const isLast = index === paths.length - 1;
+    const isLast = index === paths.length - 2;
 
     return isLast ? (
       <Text key={path} size="sm" c="dimmed">
@@ -24,9 +25,9 @@ export function DashboardBreadcrumbs() {
     );
   });
 
-  return (
+  return items.length > 0 ? (
     <Group mb="md">
       <Breadcrumbs>{items}</Breadcrumbs>
     </Group>
-  );
+  ) : null;
 } 

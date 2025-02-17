@@ -1,5 +1,4 @@
 import axios, { AxiosError, AxiosInstance, AxiosRequestConfig } from 'axios';
-import { auth } from '@clerk/nextjs';
 import { ApiResponse } from '@/types/api';
 
 export class APIError extends Error {
@@ -28,19 +27,6 @@ class APIClient {
   }
 
   private setupInterceptors() {
-    this.client.interceptors.request.use(async (config) => {
-      try {
-        const { getToken } = auth();
-        const token = await getToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-      } catch (error) {
-        console.error('Error getting auth token:', error);
-      }
-      return config;
-    });
-
     this.client.interceptors.response.use(
       (response) => response,
       (error: AxiosError<ApiResponse<any>>) => {

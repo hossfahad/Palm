@@ -10,50 +10,243 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Organization {
+enum ClientStatus {
+  ACTIVE
+  PENDING
+  INACTIVE
+  ARCHIVED
+}
+
+enum GivingVehicle {
+  DAF
+  FOUNDATION
+  TRUST
+  DIRECT
+}
+
+enum ReportType {
+  MONTHLY_SUMMARY
+  QUARTERLY_DETAIL
+  ANNUAL_IMPACT
+  TAX_DOCUMENTS
+  GRANT_HISTORY
+}
+
+enum AddressType {
+  home
+  business
+  mailing
+}
+
+enum AccessLevel {
+  view
+  recommend
+  none
+}
+
+enum CommunicationFrequency {
+  weekly
+  monthly
+  quarterly
+}
+
+enum FamilyMeetingFrequency {
+  monthly
+  quarterly
+  annually
+}
+
+enum KYCStatus {
+  pending
+  approved
+  rejected
+}
+
+model Client {
+  id        String      @id @default(cuid())
+  status    ClientStatus
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Basic Information
+  firstName        String
+  lastName         String
+  email           String   @unique
+  phone           String?
+  dateOfBirth     DateTime?
+  preferredName   String?
+  preferredPronouns String?
+
+  // Contact Information
+  primaryAddress   Address @relation("PrimaryAddress", fields: [primaryAddressId], references: [id])
+  primaryAddressId String  @unique
+  alternateAddress Address? @relation("AlternateAddress", fields: [alternateAddressId], references: [id])
+  alternateAddressId String? @unique
+  preferredContactMethod String
+  timeZone        String?
+
+  // Relationship Information
+  advisorId       String
+  relationshipStartDate DateTime
+  firmClientId    String?
+  secondaryAdvisors String[]
+  relationshipManager String?
+
+  // Philanthropic Profile
+  causeAreas      String[]
+  givingGoals     GivingGoals?
+  grantPreferences GrantPreferences?
+
+  // Accounts
+  dafs           DAFAccount[]
+  otherAccounts  OtherGivingAccount[]
+
+  // Preferences
+  preferences    ClientPreferences @relation(fields: [preferencesId], references: [id])
+  preferencesId  String @unique
+
+  // Family & Legacy
+  familyInfo     FamilyInfo?
+
+  // Documents
+  documents      Documents?
+
+  // Compliance & Security
+  compliance     Compliance @relation(fields: [complianceId], references: [id])
+  complianceId   String @unique
+
+  // Access Management
+  access        Access @relation(fields: [accessId], references: [id])
+  accessId      String @unique
+}
+
+model Address {
+  id          String      @id @default(cuid())
+  street1     String
+  street2     String?
+  city        String
+  state       String
+  postalCode  String
+  country     String
+  type        AddressType
+
+  clientPrimary    Client?  @relation("PrimaryAddress")
+  clientAlternate  Client?  @relation("AlternateAddress")
+}
+
+model GivingGoals {
+  id            String      @id @default(cuid())
+  annualTarget  Float?
+  impactAreas   String[]
+  preferredVehicles GivingVehicle[]
+  client        Client     @relation(fields: [clientId], references: [id])
+  clientId      String     @unique
+}
+
+model GrantPreferences {
+  id                String   @id @default(cuid())
+  anonymous         Boolean
+  recurringPreferred Boolean
+  minimumGrantSize  Float?
+  client           Client   @relation(fields: [clientId], references: [id])
+  clientId         String   @unique
+}
+
+model DAFAccount {
   id            String    @id @default(cuid())
   name          String
-  primaryColor  String    @default("#7C8B7D")
-  secondaryColor String   @default("#A65D57")
-  logoUrl       String?
-  faviconUrl    String?
-  useDarkMode   Boolean   @default(false)
+  sponsor       String
+  accountNumber String
+  balance       Float
   createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  users         User[]
+  client        Client    @relation(fields: [clientId], references: [id])
+  clientId      String
 }
 
-model User {
-  id                  String    @id @default(cuid())
-  clerkId            String    @unique
-  role               String
-  email              String    @unique
-  failedLoginAttempts Int       @default(0)
-  sessionExpiry      DateTime?
-  requiresPasswordReset Boolean @default(false)
-  has2FAEnabled      Boolean   @default(false)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
-  organizationId     String
-  organization       Organization @relation(fields: [organizationId], references: [id])
-  auditLogs          AuditLog[]
-
-  @@index([organizationId])
+model OtherGivingAccount {
+  id            String        @id @default(cuid())
+  type          GivingVehicle
+  name          String
+  balance       Float
+  institution   String?
+  client        Client       @relation(fields: [clientId], references: [id])
+  clientId      String
 }
 
-model AuditLog {
-  id          String   @id @default(cuid())
-  eventType   String
-  userId      String
-  userRole    String
-  timestamp   DateTime
-  ipAddress   String
-  userAgent   String
-  metadata    Json     @default("{}")
-  user        User     @relation(fields: [userId], references: [id])
-  createdAt   DateTime @default(now())
+model ClientPreferences {
+  id                    String    @id @default(cuid())
+  communicationFrequency CommunicationFrequency
+  reportingPreferences   ReportType[]
+  marketingConsent      Boolean
+  languagePreference    String
+  client               Client?
+}
 
-  @@index([userId])
-  @@index([eventType])
-  @@index([timestamp])
+model FamilyMember {
+  id                      String      @id @default(cuid())
+  relationship           String
+  name                   String
+  email                  String?
+  philanthropicInvolvement Boolean
+  accessLevel            AccessLevel?
+  familyInfo            FamilyInfo   @relation(fields: [familyInfoId], references: [id])
+  familyInfoId          String
+}
+
+model SuccessorPlan {
+  id            String    @id @default(cuid())
+  successorType String
+  successors    Json      // Stored as JSON array of successor objects
+  familyInfo    FamilyInfo @relation(fields: [familyInfoId], references: [id])
+  familyInfoId  String
+}
+
+model FamilyInfo {
+  id                    String    @id @default(cuid())
+  familyMembers         FamilyMember[]
+  successorPlans        SuccessorPlan[]
+  familyMeetingFrequency FamilyMeetingFrequency?
+  nextGenPrograms       Boolean
+  familyGivingCommittee Boolean?
+  educationPrograms     String[]
+  client               Client    @relation(fields: [clientId], references: [id])
+  clientId             String    @unique
+}
+
+model Document {
+  id            String    @id @default(cuid())
+  type          String
+  name          String
+  url           String
+  uploadedAt    DateTime
+  documents     Documents @relation(fields: [documentsId], references: [id])
+  documentsId   String
+}
+
+model Documents {
+  id            String     @id @default(cuid())
+  agreements    Document[] @relation()
+  taxDocuments  Document[]
+  grantLetters  Document[]
+  correspondence Document[]
+  client        Client    @relation(fields: [clientId], references: [id])
+  clientId      String    @unique
+}
+
+model Compliance {
+  id            String    @id @default(cuid())
+  kycStatus     KYCStatus
+  kycDate       DateTime?
+  riskRating    String?
+  restrictions  String[]
+  client        Client?
+}
+
+model Access {
+  id              String    @id @default(cuid())
+  portalAccess    Boolean
+  lastLogin       DateTime?
+  loginMethod     String?
+  twoFactorEnabled Boolean
+  client          Client?
 } 

@@ -1,0 +1,193 @@
+# Palm B2B Platform V1
+## Core Features and Requirements
+
+### Epic 1: Enterprise Organization Setup
+**Goal**: Enable wealth management firms to set up and manage their organization within the platform.
+
+#### Story 1.1: Organization Profile Creation
+**Points**: 3
+**As a**: Wealth management firm administrator
+**I want**: To create an organization profile
+**So that**: I can begin using the platform for my firm
+
+**Acceptance Criteria**:
+- Organization details captured:
+  - Name
+  - Type (Family Office, RIA, Broker-Dealer, Bank)
+  - AUM range
+  - Contact information
+  - Regulatory identifiers (SEC#, CRD#)
+- Upload organization logo
+- Set organization preferences
+- Accept terms of service
+- Complete initial compliance questionnaire
+- Receive confirmation email
+- Access welcome dashboard
+
+#### Story 1.2: Team Member Management
+**Points**: 3
+**As a**: Organization admin
+**I want**: To add and manage team members
+**So that**: My team can access the platform with appropriate permissions
+
+**Acceptance Criteria**:
+- Add team members with:
+  - Name, email, role
+  - Custom permission sets
+  - Department assignment
+- Configure 2FA requirements
+- Set password policies
+- Activity logging for all member actions
+- Automated onboarding email sequence
+
+### Epic 2: DAF Sponsor Marketplace
+**Goal**: Create a searchable, filterable marketplace of DAF sponsors and their programs.
+
+#### Story 2.1: Sponsor Profile Setup
+**Points**: 3
+**As a**: DAF sponsor
+**I want**: To create and manage my sponsor profile
+**So that**: Wealth managers can discover our programs
+
+**Acceptance Criteria**:
+- Profile includes:
+  - Organization overview
+  - Program types
+  - Minimum contributions
+  - Fee structures
+  - Investment options
+  - Geographic focus
+- Upload legal documentation
+- Set visibility preferences
+- Configure contact preferences
+- Add team member access
+- Real-time preview mode
+
+#### Story 2.2: Program Search and Discovery
+**Points**: 3
+**As a**: Wealth manager
+**I want**: To search and filter DAF programs
+**So that**: I can find the right programs for my clients
+
+**Acceptance Criteria**:
+- Search by:
+  - Minimum contribution
+  - Geographic focus
+  - Program type
+  - Investment options
+  - Fee structure
+- Filter results in real-time
+- Save search preferences
+- Export search results
+- Compare multiple programs
+- View detailed program metrics
+- Schedule sponsor meetings
+
+### Epic 3: Grant Management
+**Goal**: Enable efficient management of grants across DAF accounts.
+
+#### Story 3.1: Grant Processing
+**Points**: 3
+**As a**: Wealth manager
+**I want**: To process grants for DAF accounts
+**So that**: I can manage client grant recommendations
+
+**Acceptance Criteria**:
+- Submit individual grant requests
+- Validate charity eligibility
+- Track grant status
+- Generate confirmation reports
+- Send notifications
+- Schedule future grants
+- Error resolution workflow
+
+#### Story 3.2: Grant Reporting
+**Points**: 3
+**As a**: Operations manager
+**I want**: To track and report on grant activity
+**So that**: I can monitor philanthropic activity
+
+**Acceptance Criteria**:
+- View grant history
+- Filter by date range
+- Export grant data
+- Generate grant summaries
+- Track grant statuses
+- Search grant history
+- Document storage for grant records
+
+### Technical Requirements
+
+#### Security
+- Data encryption at rest
+- TLS 1.3 in transit
+- Security audit logging
+- Role-based access control
+- Session management
+
+#### Performance
+- Sub-second response times
+- Scalable architecture
+- CDN integration
+- Caching strategy
+- Database optimization
+
+#### UI/UX Requirements
+- Responsive design
+- Mobile-friendly interface
+- Accessible (WCAG 2.1 AA)
+- Consistent branding
+- Intuitive navigation
+
+### Data Models
+
+```typescript
+// Organization Profile
+interface Organization {
+  id: string;
+  type: 'family_office' | 'ria' | 'broker_dealer' | 'bank';
+  name: string;
+  aum: number;
+  team: TeamMember[];
+  settings: OrganizationSettings;
+}
+
+// DAF Sponsor Profile
+interface DAFSponsor {
+  id: string;
+  name: string;
+  type: SponsorType;
+  programs: DAFProgram[];
+  documents: Document[];
+}
+
+// Grant Management
+interface Grant {
+  id: string;
+  amount: number;
+  charity: CharityInfo;
+  status: GrantStatus;
+  dateRequested: Date;
+  dateApproved?: Date;
+  datePaid?: Date;
+  purpose?: string;
+  documents: Document[];
+}
+```
+
+### Implementation Timeline
+
+#### Do first:
+- Organization setup
+- Team management
+- Basic marketplace search
+
+#### Do second:
+- Sponsor profiles
+- Advanced search/filter
+- Basic grant processing
+
+#### Do third:
+- Enhanced grant management
+- Report generation
+- Document management

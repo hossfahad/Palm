@@ -1,18 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { withAuth } from '@/middleware/auth';
-import { db } from '@/lib/db';
+import { prisma } from '@/lib/db';
 import { auditLogger } from '@/lib/audit-logger';
 
 export async function GET(request: NextRequest) {
-  // Check if user has permission to view users
-  const authResponse = await withAuth(request, ['canManageUsers']);
-  if (authResponse.status !== 200) {
-    return authResponse;
-  }
-
   try {
-    const users = await db.user.findMany({
+    const users = await prisma.user.findMany({
       select: {
         id: true,
         email: true,
@@ -35,25 +28,18 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  // Check if user has permission to create users
-  const authResponse = await withAuth(request, ['canManageUsers']);
-  if (authResponse.status !== 200) {
-    return authResponse;
-  }
-
   try {
-    const { clerkId, email, role } = await request.json();
+    const { email, role } = await request.json();
 
-    if (!clerkId || !email || !role) {
+    if (!email || !role) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
       );
     }
 
-    const user = await db.user.create({
+    const user = await prisma.user.create({
       data: {
-        clerkId,
         email,
         role,
       },

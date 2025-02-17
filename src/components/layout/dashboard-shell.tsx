@@ -1,11 +1,10 @@
 'use client';
 
-import { AppShell, Burger, Group } from '@mantine/core';
+import { AppShell } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { ReactNode } from 'react';
-import { DashboardHeader } from './dashboard-header';
-import { DashboardNavbar } from './dashboard-navbar';
-import { DashboardBreadcrumbs } from './breadcrumbs';
+import { DashboardNavbar } from '@/components/layout/dashboard-navbar';
+import { StickyHeader } from './sticky-header';
 
 interface DashboardShellProps {
   children: ReactNode;
@@ -18,17 +17,27 @@ export function DashboardShell({ children }: DashboardShellProps) {
     <AppShell
       header={{ height: 60 }}
       navbar={{
-        width: 300,
+        width: 80,
         breakpoint: 'sm',
         collapsed: { mobile: !opened },
       }}
-      padding="md"
+      padding={0}
+      styles={{
+        navbar: {
+          borderRight: '1px solid var(--mantine-color-gray-2)',
+          zIndex: 2,
+        },
+        main: {
+          backgroundColor: 'var(--mantine-color-gray-0)',
+          paddingLeft: 'calc(80px + var(--mantine-spacing-md))', // navbar width + padding
+        },
+        header: {
+          paddingLeft: 'calc(80px + var(--mantine-spacing-md))', // navbar width + padding
+        }
+      }}
     >
       <AppShell.Header>
-        <Group h="100%" px="md">
-          <Burger opened={opened} onClick={toggle} hiddenFrom="sm" size="sm" />
-          <DashboardHeader />
-        </Group>
+        <StickyHeader />
       </AppShell.Header>
 
       <AppShell.Navbar p="md">
@@ -36,7 +45,6 @@ export function DashboardShell({ children }: DashboardShellProps) {
       </AppShell.Navbar>
 
       <AppShell.Main>
-        <DashboardBreadcrumbs />
         {children}
       </AppShell.Main>
     </AppShell>

@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 42, 46, 51;  /* Graphite */
+  --background-rgb: 249, 249, 246;  /* Cloud White */
+  --mantine-color-sage-0: #f8faf7;
+  --mantine-color-sage-1: #edf2eb;
+  --mantine-color-sage-2: #dce5d9;
+  --mantine-color-sage-3: #c5d5c1;
+  --mantine-color-sage-4: #adc2a8;
+  --mantine-color-sage-5: #96af90;
+  --mantine-color-sage-6: #7e977a;
+  --mantine-color-sage-7: #667c63;
+  --mantine-color-sage-8: #4f614c;
+  --mantine-color-sage-9: #384536;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  min-height: 100vh;
+}
+
+/* Button styles */
+.mantine-Button-root {
+  color: white !important;
+}
+
+.mantine-Button-root[data-variant="light"] {
+  color: var(--mantine-color-sage-7) !important;
+}
+
+.mantine-Button-root[data-variant="subtle"] {
+  color: var(--mantine-color-sage-7) !important;
+}
+
+.mantine-Button-root[data-variant="outline"] {
+  color: var(--mantine-color-sage-7) !important;
+}
+
+::selection {
+  background-color: rgba(124, 139, 125, 0.2); /* Sage with opacity */
+  color: rgb(var(--foreground-rgb));
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--background-rgb));
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D1D3D4;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #939598;
+}
+
+/* Override disabled button styles */
+.mantine-Button-root[data-disabled] {
+  background-color: white !important;
+  border-color: var(--mantine-color-gray-3) !important;
+  color: var(--mantine-color-gray-5) !important;
+} 

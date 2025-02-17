@@ -3,7 +3,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, type ReactNode } from 'react';
-import { MantineProvider } from '@/components/providers/mantine-provider';
+import { MantineProvider } from '@mantine/core';
+import { theme } from '@/lib/theme';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -24,7 +25,7 @@ export function Providers({ children }: ProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MantineProvider>
+      <MantineProvider theme={theme}>
         {children}
         <ReactQueryDevtools initialIsOpen={false} />
       </MantineProvider>
