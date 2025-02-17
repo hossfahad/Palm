@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  clerkId            String    @unique
+  role               String
+  email              String    @unique
+  failedLoginAttempts Int       @default(0)
+  sessionExpiry      DateTime?
+  requiresPasswordReset Boolean @default(false)
+  has2FAEnabled      Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  auditLogs          AuditLog[]
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  eventType   String
+  userId      String
+  userRole    String
+  timestamp   DateTime
+  ipAddress   String
+  userAgent   String
+  metadata    Json     @default("{}")
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([eventType])
+  @@index([timestamp])
+} 
