@@ -1,0 +1,816 @@
+# Palm Technical Specifications
+## Engineering and Design Implementation Plan
+
+### Overview
+This document breaks down the MVP features into implementable epics and user stories. Each story is sized to approximately 3 story points (representing ~2-3 days of work for one engineer).
+
+## Epic 1: Enterprise Dashboard
+**Goal**: Create a comprehensive dashboard system for family offices and advisors to manage their philanthropy network.
+
+### Technical Stack
+- Frontend: React with TypeScript
+- State Management: Redux Toolkit
+- UI Framework: Tailwind CSS
+- Analytics: Segment
+- Authentication: Auth0
+
+### User Stories
+
+#### 1.1 Dashboard Framework (Foundation)
+
+##### Story 1.1.1: Responsive Dashboard Layout
+**Points**: 3
+**Acceptance Criteria**:
+- Layout adapts to screen sizes: desktop (1200px+), tablet (768px-1199px), mobile (<768px)
+- Collapsible navigation sidebar with smooth animation
+- Minimum width handling with horizontal scroll when needed
+- Persistent navigation state across page refreshes
+- Keyboard navigation support for accessibility
+- Navigation items show active state
+- Breadcrumb navigation shows current location
+- All components pass WCAG 2.1 AA standards
+
+##### Story 1.1.2: Role-Based Authentication
+**Points**: 3
+**Acceptance Criteria**:
+- Support for roles: Admin, Manager, Advisor, Client
+- Role permissions stored in JWT tokens
+- Session timeout after 30 minutes of inactivity
+- Password requirements: minimum 12 characters, special characters, numbers
+- Two-factor authentication option
+- Failed login attempt limiting (5 attempts)
+- Password reset workflow
+- Audit logging of authentication events
+
+##### Story 1.1.3: White-Label Header
+**Points**: 3
+**Acceptance Criteria**:
+- Custom logo upload (supports PNG, SVG; max 2MB)
+- Dynamic color scheme based on organization settings
+- Custom favicon support
+- Responsive header layout
+- Organization name display
+- User profile menu
+- Notification center integration
+- Search functionality
+
+##### Story 1.1.4: Widget Grid System
+**Points**: 3
+**Acceptance Criteria**:
+- Drag-and-drop widget repositioning
+- Widget resizing with snap-to-grid
+- Widget state persistence
+- Loading states for all widgets
+- Error handling and retry mechanisms
+- Widget refresh controls
+- Layout saving and reset options
+- Maximum 12 widgets per dashboard
+
+#### 1.2 Network Analytics
+
+##### Story 1.2.1: Giving Analytics Dashboard
+**Points**: 3
+**Acceptance Criteria**:
+- As an advisor, I can view total giving across my entire client network
+- Dashboard shows key metrics: total donations, active DAFs, pending grants
+- YoY comparison of giving metrics with percentage change
+- Metrics are color-coded (green for increase, red for decrease)
+- Data updates automatically every 5 minutes
+- Loading states shown when data is refreshing
+- Error states display retry option
+- Tooltips explain each metric's calculation method
+
+##### Story 1.2.2: Interactive Analytics Charts
+**Points**: 3
+**Acceptance Criteria**:
+- As a user, I can interact with charts to drill down into data
+- Charts include: giving trends, cause distribution, grant allocation
+- Hover states show detailed tooltips with exact values
+- Click interaction shows detailed breakdown view
+- Charts support date range selection
+- Data can be exported to CSV
+- Charts are responsive to window size
+- Accessibility support for screen readers
+
+##### Story 1.2.3: Real-Time Activity Feed
+**Points**: 3
+**Acceptance Criteria**:
+- As a user, I can see network activity in real-time
+- Activities show: donations, grants, DAF creations, client actions
+- Each activity shows timestamp, user, action, and amount
+- Activities can be filtered by type
+- New activities appear automatically without refresh
+- Maximum 100 activities shown at once
+- Clicking activity shows full detail modal
+- Activities can be marked as read/unread
+
+##### Story 1.2.4: Advanced Filtering System
+**Points**: 3
+**Acceptance Criteria**:
+- As a user, I can filter analytics by multiple criteria
+- Filter options include: date range, cause area, client, amount range
+- Filters can be saved as presets
+- Filters persist across page refreshes
+- Clear all filters option available
+- Filter combinations show matching result count
+- Invalid filter combinations show warning
+- Filter history shows recent selections
+
+#### 1.3 White-Label System
+- [ ] Create theme configuration interface (3 points)
+- [ ] Implement logo and brand color management (3 points)
+- [ ] Build custom domain setup workflow (3 points)
+- [ ] Develop white-label preview system (3 points)
+
+#### 1.4 User Management
+- [ ] Build user invitation system (3 points)
+- [ ] Create role and permission management (3 points)
+- [ ] Implement user activity logging (3 points)
+- [ ] Develop user profile management (3 points)
+
+## Epic 2: AI-Powered Charity Discovery
+**Goal**: Create an intelligent charity search and recommendation system using Anthropic's Claude API.
+
+### Technical Stack
+- AI: Anthropic Claude API
+- Search: Elasticsearch
+- Database: PostgreSQL
+- Cache: Redis
+
+### User Stories
+
+#### 2.1 Charity Database & Discovery
+
+##### Story 2.1.1: Charity Search Experience
+**Points**: 3
+**Acceptance Criteria**:
+- As a client, I can search for charities using natural language
+- Search supports partial matches and common misspellings
+- Results appear as user types (after 3 characters)
+- Each result shows: name, logo, cause area, impact rating
+- Results are ranked by relevance and impact score
+- Search history is saved for quick access
+- Popular searches are suggested
+- No results state shows alternative suggestions
+
+##### Story 2.1.2: Charity Profile View
+**Points**: 3
+**Acceptance Criteria**:
+- As a user, I can view detailed charity information
+- Profile shows: mission, financials, impact metrics, leadership
+- Financial charts show 5-year trending data
+- Impact metrics are compared to category averages
+- Document repository shows annual reports and Form 990s
+- Social proof section shows other donor activity
+- "Donate Now" button is prominently displayed
+- Share functionality for sending to clients
+
+##### Story 2.1.3: Charity Verification System
+**Points**: 3
+**Acceptance Criteria**:
+- As an admin, I can verify charity credentials
+- Automated checks against IRS database
+- Document upload system for verification materials
+- Verification status clearly displayed on profiles
+- Email notifications for verification status changes
+- Audit log of all verification activities
+- Manual override capability for admins
+- Bulk verification tools for multiple charities
+
+##### Story 2.1.4: Data Freshness Management
+**Points**: 3
+**Acceptance Criteria**:
+- As a system, data is kept current and accurate
+- Financial data updates monthly
+- Impact metrics update quarterly
+- Automated alerts for stale data
+- Data source attribution is visible
+- Last updated timestamp shown
+- Data freshness indicators (green/yellow/red)
+- Scheduled update windows are configurable
+
+#### 2.2 Search Implementation
+- [ ] Create basic charity search interface (3 points)
+- [ ] Implement advanced filtering system (3 points)
+- [ ] Build search results caching (3 points)
+- [ ] Develop search analytics tracking (3 points)
+
+#### 2.3 AI Integration
+- [ ] Set up Claude API integration (3 points)
+- [ ] Implement charity recommendation engine (3 points)
+- [ ] Create personalization algorithm (3 points)
+- [ ] Build recommendation feedback system (3 points)
+
+#### 2.4 DAF Management
+- [ ] Create DAF setup workflow (3 points)
+- [ ] Implement DAF import system (3 points)
+- [ ] Build DAF documentation manager (3 points)
+- [ ] Develop DAF activity tracking (3 points)
+
+## Epic 3: Client Portal
+**Goal**: Build a user-friendly portal for end clients to discover and interact with charitable giving opportunities.
+
+### Technical Stack
+- Frontend: Next.js
+- Authentication: Auth0
+- Payments: Stripe
+- Email: SendGrid
+
+### User Stories
+
+#### 3.1 Client Portal Framework
+
+##### Story 3.1.1: Client Dashboard Experience
+**Points**: 3
+**Acceptance Criteria**:
+- As a client, I see a personalized dashboard upon login
+- Dashboard shows: giving summary, active DAFs, recent activity
+- Quick action buttons for common tasks (donate, grant, invite)
+- Giving goals progress tracker
+- Upcoming grant payment schedule
+- Portfolio performance overview
+- Cause area distribution chart
+- Mobile-optimized layout
+
+##### Story 3.1.2: Secure Authentication Flow
+**Points**: 3
+**Acceptance Criteria**:
+- As a client, I can securely access my account
+- Single sign-on support for advisor platforms
+- 2FA option with SMS or authenticator app
+- Remember device functionality
+- Password strength requirements enforced
+- Automatic session timeout after 30 minutes
+- Clear error messages for login issues
+- Secure password reset flow
+
+##### Story 3.1.3: Smart Notification Center
+**Points**: 3
+**Acceptance Criteria**:
+- As a client, I receive relevant updates
+- Notifications for: grants, donations, advisor messages
+- Priority levels (high/medium/low) with visual indicators
+- In-app and email notification options
+- Notification preferences management
+- Read/unread status tracking
+- Batch notification actions (mark all read, delete)
+- Notification history view
+
+##### Story 3.1.4: Responsive Design System
+**Points**: 3
+**Acceptance Criteria**:
+- As a user, I can access all features on any device
+- Layouts optimize for desktop, tablet, and mobile
+- Touch-friendly interface elements
+- Consistent experience across devices
+- Performance optimization for mobile
+- Offline capability for basic features
+- Native app-like experience on mobile web
+- Orientation change handling
+
+#### 3.2 Onboarding Flow
+- [ ] Create advisor invite system (3 points)
+- [ ] Implement client registration flow (3 points)
+- [ ] Build profile setup wizard (3 points)
+- [ ] Develop preference configuration (3 points)
+
+#### 3.3 Investment Interface
+- [ ] Create DAF investment workflow (3 points)
+- [ ] Implement payment processing (3 points)
+- [ ] Build investment confirmation system (3 points)
+- [ ] Develop investment history tracking (3 points)
+
+## Epic 4: Tax Document System
+**Goal**: Create an automated system for generating and managing tax documents.
+
+### Technical Stack
+- PDF Generation: PDFKit
+- Storage: AWS S3
+- Processing: AWS Lambda
+- Queue: SQS
+
+### User Stories
+
+#### 4.1 Tax Document Generation
+
+##### Story 4.1.1: Tax Form Creation
+**Points**: 3
+**Acceptance Criteria**:
+- As an advisor, I can generate tax forms for clients
+- Support for forms: 8283, 1098-C, annual summaries
+- Form preview before generation
+- Bulk generation for multiple clients
+- Error validation before submission
+- Progress tracking for batch operations
+- Email notification when forms are ready
+- Automated filing deadline reminders
+
+##### Story 4.1.2: Smart Form Population
+**Points**: 3
+**Acceptance Criteria**:
+- As a system, forms are accurately populated
+- Auto-fill from client and transaction data
+- Validation against IRS requirements
+- Highlights missing required information
+- Calculates totals and carries values
+- Format verification (dates, numbers, EINs)
+- Audit trail of data sources
+- Manual override capability
+
+##### Story 4.1.3: Batch Processing Engine
+**Points**: 3
+**Acceptance Criteria**:
+- As an admin, I can process forms in bulk
+- Queue management for large batches
+- Priority processing options
+- Progress monitoring dashboard
+- Error handling and retry logic
+- Resource usage optimization
+- Concurrent processing limits
+- Performance metrics tracking
+
+##### Story 4.1.4: Document Preview System
+**Points**: 3
+**Acceptance Criteria**:
+- As a user, I can preview documents before finalization
+- Exact visual match to final output
+- Mobile-friendly preview
+- Download draft version option
+- Annotation and comment capability
+- Version comparison view
+- Share preview with clients
+- Print preview optimization
+
+#### 4.2 Document Management
+- [ ] Create document storage system (3 points)
+- [ ] Implement document search (3 points)
+- [ ] Build version control system (3 points)
+- [ ] Develop document sharing (3 points)
+
+## Epic 5: Impact Reporting
+**Goal**: Develop a comprehensive impact reporting system for advisors and clients.
+
+### Technical Stack
+- Visualization: Recharts
+- PDF Generation: PDFKit
+- Data Processing: Apache Spark
+- Cache: Redis
+
+### User Stories
+
+#### 5.1 Impact Report Generation
+
+##### Story 5.1.1: Impact Report Builder
+**Points**: 3
+**Acceptance Criteria**:
+- As an advisor, I can create customized impact reports
+- Template selection with preview
+- White-label branding options
+- Drag-and-drop report sections
+- Custom narrative sections
+- Data visualization options
+- Save report templates
+- Scheduled report generation
+
+##### Story 5.1.2: Impact Data Aggregation
+**Points**: 3
+**Acceptance Criteria**:
+- As a system, impact data is accurately compiled
+- Aggregate across multiple DAFs
+- Historical trend analysis
+- Benchmark comparisons
+- Cause area breakdowns
+- Geographic distribution
+- SDG alignment scoring
+- ROI calculations for grants
+
+##### Story 5.1.3: Dynamic Visualization Engine
+**Points**: 3
+**Acceptance Criteria**:
+- As a user, I can create engaging visualizations
+- Interactive chart types (pie, bar, line, map)
+- Custom color schemes
+- Responsive sizing
+- Animation options
+- Export to high-res images
+- Accessibility features
+- Print optimization
+
+##### Story 5.1.4: Report Distribution
+**Points**: 3
+**Acceptance Criteria**:
+- As an advisor, I can share reports effectively
+- Multiple format exports (PDF, PPT, web)
+- Secure sharing links
+- Access tracking
+- Automated distribution
+- Interactive web version
+- Mobile-optimized view
+- Archive management
+
+#### 5.2 Impact Metrics
+- [ ] Create impact calculation models (3 points)
+- [ ] Implement metric tracking (3 points)
+- [ ] Build comparison analytics (3 points)
+- [ ] Develop trend analysis (3 points)
+
+## API Specifications
+
+### Authentication
+All endpoints require a valid JWT token in the Authorization header:
+```
+Authorization: Bearer <jwt_token>
+```
+
+### Common Response Format
+```typescript
+interface ApiResponse<T> {
+  status: 'success' | 'error';
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+    details?: any;
+  };
+  meta?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+  };
+}
+```
+
+### Dashboard API
+
+#### Get Dashboard Analytics
+```typescript
+GET /api/v1/dashboard/analytics
+
+Query Parameters:
+{
+  timeRange: 'day' | 'week' | 'month' | 'year';
+  organizationId?: string;
+}
+
+Response:
+{
+  totalDonations: number;
+  activeDAFs: number;
+  pendingGrants: number;
+  recentActivity: Array<{
+    id: string;
+    type: 'donation' | 'grant' | 'daf_creation';
+    amount: number;
+    timestamp: string;
+    status: string;
+  }>;
+  metrics: {
+    donationGrowth: number;
+    averageGrant: number;
+    totalImpact: number;
+  };
+}
+```
+
+#### Get Network Activity
+```typescript
+GET /api/v1/dashboard/network
+
+Query Parameters:
+{
+  page: number;
+  limit: number;
+  filter?: {
+    activityType?: string[];
+    dateRange?: {
+      start: string;
+      end: string;
+    };
+  };
+}
+
+Response:
+{
+  activities: Array<{
+    id: string;
+    type: string;
+    actor: {
+      id: string;
+      name: string;
+      role: string;
+    };
+    details: Record<string, any>;
+    timestamp: string;
+  }>;
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+```
+
+### Charity Discovery API
+
+#### Search Charities
+```typescript
+GET /api/v1/charities/search
+
+Query Parameters:
+{
+  query: string;
+  category?: string[];
+  location?: {
+    lat: number;
+    lng: number;
+    radius: number;
+  };
+  page: number;
+  limit: number;
+  sort?: {
+    field: string;
+    direction: 'asc' | 'desc';
+  };
+}
+
+Response:
+{
+  charities: Array<{
+    id: string;
+    name: string;
+    ein: string;
+    category: string[];
+    description: string;
+    metrics: {
+      impactScore: number;
+      financialHealth: number;
+      transparency: number;
+    };
+    location: {
+      address: string;
+      city: string;
+      state: string;
+      zip: string;
+      coordinates: {
+        lat: number;
+        lng: number;
+      };
+    };
+  }>;
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+  };
+}
+```
+
+#### Get AI Recommendations
+```typescript
+POST /api/v1/charities/recommend
+
+Request Body:
+{
+  userId: string;
+  preferences: {
+    causes: string[];
+    locations?: string[];
+    donationRange?: {
+      min: number;
+      max: number;
+    };
+  };
+  context?: {
+    recentDonations: Array<{
+      charityId: string;
+      amount: number;
+      date: string;
+    }>;
+  };
+}
+
+Response:
+{
+  recommendations: Array<{
+    charity: {
+      id: string;
+      name: string;
+      description: string;
+      matchScore: number;
+      reasoning: string[];
+    };
+    suggestedDonation?: {
+      amount: number;
+      frequency: 'one-time' | 'monthly' | 'annual';
+    };
+  }>;
+}
+```
+
+### DAF Management API
+
+#### Create DAF
+```typescript
+POST /api/v1/daf/create
+
+Request Body:
+{
+  name: string;
+  organizationId: string;
+  initialContribution: {
+    amount: number;
+    currency: string;
+    source: {
+      type: 'bank' | 'wire' | 'stock';
+      details: Record<string, any>;
+    };
+  };
+  advisors: Array<{
+    userId: string;
+    role: 'primary' | 'secondary';
+  }>;
+  successorStrategy?: {
+    type: 'individual' | 'charity';
+    details: Record<string, any>;
+  };
+  investmentPreferences?: {
+    strategy: 'conservative' | 'moderate' | 'aggressive';
+    restrictions?: string[];
+  };
+}
+
+Response:
+{
+  daf: {
+    id: string;
+    status: 'pending' | 'active';
+    accountNumber: string;
+    createdAt: string;
+    balance: number;
+  };
+  nextSteps: string[];
+}
+```
+
+#### Update DAF
+```typescript
+PUT /api/v1/daf/{id}
+
+Request Body:
+{
+  name?: string;
+  advisors?: Array<{
+    userId: string;
+    role: string;
+  }>;
+  investmentPreferences?: {
+    strategy?: string;
+    restrictions?: string[];
+  };
+  status?: string;
+}
+
+Response:
+{
+  daf: {
+    id: string;
+    name: string;
+    updatedAt: string;
+    // ... updated fields
+  };
+}
+```
+
+### Document Generation API
+
+#### Generate Tax Document
+```typescript
+POST /api/v1/documents/generate
+
+Request Body:
+{
+  type: '8283' | '1098-C' | 'annual_summary';
+  year: number;
+  dafId: string;
+  format: 'pdf' | 'csv';
+  delivery?: {
+    email?: string;
+    webhook?: string;
+  };
+}
+
+Response:
+{
+  document: {
+    id: string;
+    status: 'processing' | 'completed' | 'failed';
+    url?: string;
+    expiresAt: string;
+  };
+  meta: {
+    estimatedProcessingTime: number;
+  };
+}
+```
+
+### Impact Reporting API
+
+#### Generate Impact Report
+```typescript
+POST /api/v1/reports/generate
+
+Request Body:
+{
+  dateRange: {
+    start: string;
+    end: string;
+  };
+  metrics: string[];
+  groupBy?: string[];
+  format: 'pdf' | 'interactive';
+  branding?: {
+    logo?: string;
+    colors?: {
+      primary: string;
+      secondary: string;
+    };
+  };
+}
+
+Response:
+{
+  report: {
+    id: string;
+    url: string;
+    metrics: Record<string, any>;
+    generatedAt: string;
+    expiresAt: string;
+  };
+}
+```
+```
+
+## Database Schema
+
+```sql
+-- Example core tables
+CREATE TABLE organizations (
+  id UUID PRIMARY KEY,
+  name VARCHAR(255),
+  type VARCHAR(50),
+  settings JSONB
+);
+
+CREATE TABLE dafs (
+  id UUID PRIMARY KEY,
+  org_id UUID REFERENCES organizations(id),
+  status VARCHAR(50),
+  balance DECIMAL,
+  created_at TIMESTAMP
+);
+
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  org_id UUID REFERENCES organizations(id),
+  role VARCHAR(50),
+  settings JSONB
+);
+```
+
+## Infrastructure Requirements
+
+### AWS Services
+- ECS for container orchestration
+- RDS for PostgreSQL
+- ElastiCache for Redis
+- S3 for document storage
+- CloudFront for content delivery
+- Route53 for DNS management
+
+### Security Requirements
+- SOC 2 Type II compliance
+- Data encryption at rest and in transit
+- Regular security audits
+- GDPR and CCPA compliance
+- Regular penetration testing
+
+## Development Workflow
+1. Two-week sprint cycles
+2. Daily standups
+3. Sprint planning and retrospectives
+4. Continuous integration/deployment
+5. Feature flags for gradual rollout
+
+## Monitoring and Analytics
+- Application monitoring: New Relic
+- Error tracking: Sentry
+- Analytics: Segment
+- Log management: CloudWatch
+- Performance monitoring: DataDog
+
+## Quality Assurance
+- Unit testing: Jest
+- Integration testing: Cypress
+- Load testing: k6
+- Security testing: OWASP ZAP
+- Accessibility testing: axe-core
