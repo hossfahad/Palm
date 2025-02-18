@@ -22,6 +22,9 @@ const clientSchema = z.object({
   status: z.enum(['ACTIVE', 'PENDING', 'INACTIVE', 'ARCHIVED'])
 });
 
+// Validation schema for updating clients
+const updateClientSchema = createClientSchema.partial();
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -49,30 +52,32 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const json = await req.json();
-    const body = createClientSchema.parse(json);
+    const body = await request.json();
+    const validatedData = createClientSchema.parse(body);
 
-    const client = await clientService.createClient({
-      ...body,
-      dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
-      relationshipStartDate: new Date(body.relationshipStartDate),
-    });
+    // Transform date strings to Date objects
+    const clientData = {
+      ...validatedData,
+      dateOfBirth: validatedData.dateOfBirth ? new Date(validatedData.dateOfBirth) : undefined,
+      relationshipStartDate: new Date(validatedData.relationshipStartDate),
+    };
 
+    const client = await clientService.createClient(clientData);
     return NextResponse.json(client, { status: 201 });
   } catch (error) {
     console.error('Error creating client:', error);
     
     if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
+        { error: 'Validation error', details: error.errors },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to create client' },
       { status: 500 }
     );
   }
@@ -82,7 +87,7 @@ export async function PUT(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       return NextResponse.json(
         { error: 'Client ID is required' },
@@ -91,26 +96,34 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const validatedData = clientSchema.partial().parse(body);
-    
-    const client = await clientService.updateClient(id, validatedData);
-    if (!client) {
+    const validatedData = updateClientSchema.parse(body);
+
+    // Transform date strings to Date objects if they exist
+    const updateData = {
+      ...validatedData,
+      dateOfBirth: validatedData.dateOfBirth ? new Date(validatedData.dateOfBirth) : undefined,
+      relationshipStartDate: validatedData.relationshipStartDate ? new Date(validatedData.relationshipStartDate) : undefined,
+    };
+
+    const updatedClient = await clientService.updateClient(id, updateData);
+    return NextResponse.json(updatedClient);
+  } catch (error) {
+    console.error('Error updating client:', error);
+
+    if (error instanceof ZodError) {
+      return NextResponse.json(
+        { error: 'Validation error', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof Error && error.message === 'Client not found') {
       return NextResponse.json(
         { error: 'Client not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(client);
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      );
-    }
-    
-    console.error('Failed to update client:', error);
     return NextResponse.json(
       { error: 'Failed to update client' },
       { status: 500 }
@@ -122,7 +135,7 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    
+
     if (!id) {
       return NextResponse.json(
         { error: 'Client ID is required' },
@@ -130,17 +143,18 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const client = await clientService.deleteClient(id);
-    if (!client) {
+    await clientService.deleteClient(id);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    console.error('Error deleting client:', error);
+
+    if (error instanceof Error && error.message === 'Client not found') {
       return NextResponse.json(
         { error: 'Client not found' },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(client);
-  } catch (error) {
-    console.error('Failed to delete client:', error);
     return NextResponse.json(
       { error: 'Failed to delete client' },
       { status: 500 }

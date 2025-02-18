@@ -82,7 +82,7 @@ export default function DashboardPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const { clients, addClient, isCreating } = useClients();
+  const { clients, isCreating } = useClients();
 
   const handleSendMessage = async (content: string) => {
     const userMessage: Message = { role: 'user', content };
@@ -136,6 +136,7 @@ export default function DashboardPage() {
     dafs: client.dafs || 0,
     totalValue: client.totalValue || 0,
     lastActivity: client.lastActivity || new Date().toISOString(),
+    status: client.status
   }));
 
   return (
@@ -176,3 +177,10 @@ export default function DashboardPage() {
     </Container>
   );
 } 
+
+function addClient(arg0: {
+  firstName: string; lastName: string; email: string; status: string; advisorId: string; // This should come from your auth context
+  preferredContactMethod: string; relationshipStartDate: string; secondaryAdvisors: never[]; causeAreas: never[];
+}) {
+  throw new Error('Function not implemented.');
+}

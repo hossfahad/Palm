@@ -161,15 +161,132 @@ model GrantPreferences {
   clientId         String   @unique
 }
 
+model User {
+  id            String      @id @default(cuid())
+  email         String      @unique
+  name          String?
+  role          String      @default("user")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  dafAccounts   DAFAccount[]
+}
+
 model DAFAccount {
-  id            String    @id @default(cuid())
+  id            String          @id @default(cuid())
+  externalId    String         @unique
+  status        String         @default("draft")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   name          String
-  sponsor       String
-  accountNumber String
-  balance       Float
-  createdAt     DateTime  @default(now())
-  client        Client    @relation(fields: [clientId], references: [id])
+  description   String?
   clientId      String
+  advisorId     String
+  
+  // Relations
+  client        Client         @relation(fields: [clientId], references: [id])
+  advisor       User           @relation(fields: [advisorId], references: [id])
+  sponsorInfo   DAFSponsorInfo?
+  balances      DAFBalances?
+  accountHolders DAFAccountHolder[]
+  grants        DAFGrant[]
+  contributions DAFContribution[]
+  documents     DAFDocument[]
+
+  @@index([clientId])
+  @@index([advisorId])
+}
+
+model DAFSponsorInfo {
+  id          String    @id @default(cuid())
+  name        String
+  type        String
+  externalId  String?
+  details     Json?
+  dafAccountId String   @unique
+  dafAccount  DAFAccount @relation(fields: [dafAccountId], references: [id], onDelete: Cascade)
+
+  @@index([dafAccountId])
+}
+
+model DAFBalances {
+  id                String    @id @default(cuid())
+  currentBalance    Float
+  pendingBalance   Float?
+  totalContributions Float
+  totalGrants      Float?
+  availableToGrant Float?
+  currency         String    @default("USD")
+  lastUpdated      DateTime  @default(now())
+  dafAccountId     String    @unique
+  dafAccount       DAFAccount @relation(fields: [dafAccountId], references: [id], onDelete: Cascade)
+
+  @@index([dafAccountId])
+}
+
+model DAFAccountHolder {
+  id            String    @id @default(cuid())
+  type          String
+  permissions   Json?
+  relationship  String?
+  dateAdded     DateTime  @default(now())
+  lastAccess    DateTime?
+  dafAccountId  String
+  dafAccount    DAFAccount @relation(fields: [dafAccountId], references: [id], onDelete: Cascade)
+
+  @@index([dafAccountId])
+}
+
+model DAFGrant {
+  id            String    @id @default(cuid())
+  amount        Float
+  status        String
+  charityName   String
+  charityEIN    String
+  requestedDate DateTime  @default(now())
+  approvedDate  DateTime?
+  paidDate      DateTime?
+  scheduledDate DateTime?
+  purpose       String?
+  anonymous     Boolean   @default(false)
+  dafAccountId  String
+  dafAccount    DAFAccount @relation(fields: [dafAccountId], references: [id], onDelete: Cascade)
+
+  @@index([dafAccountId])
+}
+
+model DAFContribution {
+  id            String    @id @default(cuid())
+  amount        Float
+  type          String
+  status        String
+  date          DateTime  @default(now())
+  sourceType    String
+  sourceDetails Json?
+  assetType     String
+  assetDetails  Json?
+  taxReceiptIssued Boolean @default(false)
+  taxReceiptDate DateTime?
+  taxReceiptId  String?
+  dafAccountId  String
+  dafAccount    DAFAccount @relation(fields: [dafAccountId], references: [id], onDelete: Cascade)
+
+  @@index([dafAccountId])
+}
+
+model DAFDocument {
+  id            String    @id @default(cuid())
+  type          String
+  title         String
+  url           String
+  uploadedBy    String
+  uploadedAt    DateTime  @default(now())
+  metadata      Json?
+  expiresAt     DateTime?
+  tags          String[]
+  dafAccountId  String
+  dafAccount    DAFAccount @relation(fields: [dafAccountId], references: [id], onDelete: Cascade)
+
+  @@index([dafAccountId])
 }
 
 model OtherGivingAccount {

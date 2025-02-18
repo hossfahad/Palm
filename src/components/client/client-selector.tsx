@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ActionIcon, Group, Modal, Select, Stack, TextInput, Button } from '@mantine/core';
-import { IconPlus, IconUser } from '@tabler/icons-react';
+import { ActionIcon, Group, Modal, Stack, TextInput, Button, Switch, Box, Divider, Combobox, InputBase, useCombobox } from '@mantine/core';
+import { IconPlus, IconUser, IconChevronDown } from '@tabler/icons-react';
 import { useCreateClient } from '@/hooks/use-create-client';
 import { notifications } from '@mantine/notifications';
 
@@ -13,6 +13,7 @@ interface Client {
   dafs: number;
   totalValue: number;
   lastActivity: string;
+  status?: 'ACTIVE' | 'PENDING' | 'INACTIVE' | 'ARCHIVED';
 }
 
 interface ClientSelectorProps {
@@ -29,9 +30,25 @@ export function ClientSelector({
   onAddClient,
 }: ClientSelectorProps) {
   const [opened, setOpened] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientEmail, setNewClientEmail] = useState('');
+  const [search, setSearch] = useState('');
   const { createClient, isLoading, error } = useCreateClient();
+  const combobox = useCombobox({
+    onDropdownClose: () => {
+      setSearch('');
+    }
+  });
+
+  const hasArchivedClients = clients.some(client => client.status === 'ARCHIVED');
+  const filteredClients = clients.filter(client => 
+    (showArchived || client.status !== 'ARCHIVED') &&
+    (client.name.toLowerCase().includes(search.toLowerCase()) ||
+    client.email.toLowerCase().includes(search.toLowerCase()))
+  );
+
+  const selectedClient = clients.find(client => client.id === selectedClientId);
 
   const handleSubmit = async () => {
     if (!newClientName || !newClientEmail) return;
@@ -71,19 +88,86 @@ export function ClientSelector({
   return (
     <>
       <Group gap="xs">
-        <Select
-          placeholder="Select client"
-          value={selectedClientId}
-          onChange={(value) => value && onClientChange(value)}
-          data={clients.map((client) => ({
-            value: client.id,
-            label: client.name,
-          }))}
-          leftSection={<IconUser size={16} />}
-          clearable
-          searchable
-          w={250}
-        />
+        <Combobox
+          onOptionSubmit={(value) => {
+            onClientChange(value);
+            setSearch('');
+            combobox.closeDropdown();
+          }}
+          store={combobox}
+        >
+          <Combobox.Target>
+            <InputBase
+              component="button"
+              type="button"
+              pointer
+              rightSection={<IconChevronDown size={16} />}
+              leftSection={<IconUser size={16} />}
+              w={250}
+              onClick={() => combobox.toggleDropdown()}
+              rightSectionPointerEvents="none"
+            >
+              {selectedClient ? (
+                <span style={{
+                  color: selectedClient.status === 'ARCHIVED' ? 'var(--mantine-color-gray-6)' : undefined,
+                  fontStyle: selectedClient.status === 'ARCHIVED' ? 'italic' : undefined,
+                }}>
+                  {selectedClient.name}
+                  {selectedClient.status === 'ARCHIVED' && ' (Archived)'}
+                </span>
+              ) : (
+                <span style={{ color: 'var(--mantine-color-placeholder)' }}>
+                  Select client
+                </span>
+              )}
+            </InputBase>
+          </Combobox.Target>
+
+          <Combobox.Dropdown>
+            <Stack gap="xs">
+              <Combobox.Search
+                value={search}
+                onChange={(event) => setSearch(event.currentTarget.value)}
+                placeholder="Search clients..."
+              />
+              
+              {hasArchivedClients && (
+                <Box px="xs">
+                  <Switch
+                    label="Show archived clients"
+                    checked={showArchived}
+                    onChange={(event) => setShowArchived(event.currentTarget.checked)}
+                    size="sm"
+                  />
+                </Box>
+              )}
+
+              <Divider />
+
+              <Combobox.Options>
+                {filteredClients.length === 0 ? (
+                  <Combobox.Empty>No clients found</Combobox.Empty>
+                ) : (
+                  filteredClients.map((client) => (
+                    <Combobox.Option
+                      key={client.id}
+                      value={client.id}
+                      disabled={client.status === 'ARCHIVED' && !showArchived}
+                      style={{
+                        color: client.status === 'ARCHIVED' ? 'var(--mantine-color-gray-6)' : undefined,
+                        fontStyle: client.status === 'ARCHIVED' ? 'italic' : undefined,
+                      }}
+                    >
+                      {client.name}
+                      {client.status === 'ARCHIVED' && ' (Archived)'}
+                    </Combobox.Option>
+                  ))
+                )}
+              </Combobox.Options>
+            </Stack>
+          </Combobox.Dropdown>
+        </Combobox>
+
         <ActionIcon
           variant="light"
           size="lg"

@@ -29,218 +29,308 @@ const toSnakeCase = (str: string): string => {
 
 export const clientService = {
   async getClients() {
-    return prisma.client.findMany({
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    try {
+      return await prisma.client.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          primaryAddress: true,
+          preferences: true,
+          compliance: true,
+          access: true,
+          dafs: true,
+          givingGoals: true,
+          grantPreferences: true,
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      throw new Error('Failed to fetch clients');
+    }
   },
 
   async getClientById(id: string) {
-    return prisma.client.findUnique({
-      where: { id },
-    });
+    try {
+      const client = await prisma.client.findUnique({
+        where: { id },
+        include: {
+          primaryAddress: true,
+          alternateAddress: true,
+          preferences: true,
+          compliance: true,
+          access: true,
+          dafs: true,
+          givingGoals: true,
+          grantPreferences: true,
+          familyInfo: {
+            include: {
+              familyMembers: true,
+              successorPlans: true,
+            },
+          },
+          documents: {
+            include: {
+              documents: true,
+            },
+          },
+          otherAccounts: true,
+        },
+      });
+
+      if (!client) {
+        throw new Error('Client not found');
+      }
+
+      return this.transformClientToProfile(client);
+    } catch (error) {
+      console.error('Error fetching client:', error);
+      throw error;
+    }
   },
 
   async createClient(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) {
-    // Create required related records first
-    const [preferences, compliance, access, primaryAddress] = await Promise.all([
-      prisma.clientPreferences.create({
-        data: {
-          communicationFrequency: 'monthly',
-          reportingPreferences: [],
-          marketingConsent: false,
-          languagePreference: 'en-US',
-        },
-      }),
-      prisma.compliance.create({
-        data: {
-          kycStatus: 'pending',
-          restrictions: [],
-        },
-      }),
-      prisma.access.create({
-        data: {
-          canView: true,
-          canEdit: false,
-          canDelete: false,
-          canInvite: false,
-          grantAccess: false,
-          reportAccess: false,
-          documentAccess: false,
-          role: 'client',
-        },
-      }),
-      prisma.address.create({
-        data: {
-          street1: '',  // These would come from the client parameter in a real implementation
-          city: '',
-          state: '',
-          postalCode: '',
-          country: '',
-          type: 'home',
-        },
-      }),
-    ]);
+    try {
+      // Create required related records first
+      const [preferences, compliance, access, primaryAddress] = await Promise.all([
+        prisma.clientPreferences.create({
+          data: {
+            communicationFrequency: 'monthly',
+            reportingPreferences: [],
+            marketingConsent: false,
+            languagePreference: 'en-US',
+          },
+        }),
+        prisma.compliance.create({
+          data: {
+            kycStatus: 'pending',
+            restrictions: [],
+          },
+        }),
+        prisma.access.create({
+          data: {
+            canView: true,
+            canEdit: false,
+            canDelete: false,
+            canInvite: false,
+            grantAccess: false,
+            reportAccess: false,
+            documentAccess: false,
+            role: 'client',
+          },
+        }),
+        prisma.address.create({
+          data: {
+            street1: '',
+            city: '',
+            state: '',
+            postalCode: '',
+            country: '',
+            type: 'home',
+          },
+        }),
+      ]);
 
-    // Now create the client with all required relations
-    return prisma.client.create({
-      data: {
-        status: client.status,
-        firstName: client.firstName,
-        lastName: client.lastName,
-        email: client.email,
-        phone: client.phone,
-        dateOfBirth: client.dateOfBirth,
-        preferredName: client.preferredName,
-        preferredPronouns: client.preferredPronouns,
-        advisorId: client.advisorId,
-        relationshipStartDate: client.relationshipStartDate,
-        firmClientId: client.firmClientId,
-        secondaryAdvisors: client.secondaryAdvisors,
-        relationshipManager: client.relationshipManager,
-        causeAreas: client.causeAreas,
-        preferredContactMethod: client.preferredContactMethod,
-        primaryAddressId: primaryAddress.id,
-        preferencesId: preferences.id,
-        complianceId: compliance.id,
-        accessId: access.id,
-      },
-    });
+      // Create the client with all required relations
+      const newClient = await prisma.client.create({
+        data: {
+          status: client.status,
+          firstName: client.firstName,
+          lastName: client.lastName,
+          email: client.email,
+          phone: client.phone,
+          dateOfBirth: client.dateOfBirth,
+          preferredName: client.preferredName,
+          preferredPronouns: client.preferredPronouns,
+          advisorId: client.advisorId,
+          relationshipStartDate: client.relationshipStartDate,
+          firmClientId: client.firmClientId,
+          secondaryAdvisors: client.secondaryAdvisors,
+          relationshipManager: client.relationshipManager,
+          causeAreas: client.causeAreas,
+          preferredContactMethod: client.preferredContactMethod,
+          primaryAddressId: primaryAddress.id,
+          preferencesId: preferences.id,
+          complianceId: compliance.id,
+          accessId: access.id,
+        },
+        include: {
+          primaryAddress: true,
+          preferences: true,
+          compliance: true,
+          access: true,
+        },
+      });
+
+      return this.transformClientToProfile(newClient);
+    } catch (error) {
+      console.error('Error creating client:', error);
+      throw error;
+    }
   },
 
   async updateClient(id: string, updates: Partial<Omit<Client, 'id' | 'createdAt' | 'updatedAt'>>) {
-    return prisma.client.update({
-      where: { id },
-      data: updates,
-    });
+    try {
+      const client = await prisma.client.update({
+        where: { id },
+        data: updates,
+        include: {
+          primaryAddress: true,
+          alternateAddress: true,
+          preferences: true,
+          compliance: true,
+          access: true,
+          dafs: true,
+          givingGoals: true,
+          grantPreferences: true,
+          familyInfo: {
+            include: {
+              familyMembers: true,
+              successorPlans: true,
+            },
+          },
+          documents: {
+            include: {
+              documents: true,
+            },
+          },
+          otherAccounts: true,
+        },
+      });
+
+      return this.transformClientToProfile(client);
+    } catch (error) {
+      console.error('Error updating client:', error);
+      throw error;
+    }
   },
 
   async deleteClient(id: string) {
-    // First delete all related records
-    const client = await prisma.client.findUnique({
-      where: { id },
-      include: {
-        primaryAddress: true,
-        alternateAddress: true,
-        preferences: true,
-        compliance: true,
-        access: true,
-        documents: {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const client = await tx.client.findUnique({
+          where: { id },
           include: {
-            documents: true,
+            primaryAddress: true,
+            alternateAddress: true,
+            preferences: true,
+            compliance: true,
+            access: true,
+            documents: {
+              include: {
+                documents: true,
+              },
+            },
+            familyInfo: {
+              include: {
+                familyMembers: true,
+                successorPlans: true,
+              },
+            },
+            givingGoals: true,
+            grantPreferences: true,
+            dafs: true,
+            otherAccounts: true,
+            invitations: true,
           },
-        },
-        familyInfo: {
-          include: {
-            familyMembers: true,
-            successorPlans: true,
-          },
-        },
-        givingGoals: true,
-        grantPreferences: true,
-        dafs: true,
-        otherAccounts: true,
-        invitations: true,
-      },
-    });
+        });
 
-    if (!client) {
-      throw new Error('Client not found');
+        if (!client) {
+          throw new Error('Client not found');
+        }
+
+        // Delete related records in the correct order
+        if (client.invitations.length > 0) {
+          await tx.clientAccessInvitation.deleteMany({
+            where: { clientId: id },
+          });
+        }
+
+        if (client.dafs.length > 0) {
+          await tx.dAFAccount.deleteMany({
+            where: { clientId: id },
+          });
+        }
+
+        if (client.otherAccounts.length > 0) {
+          await tx.otherGivingAccount.deleteMany({
+            where: { clientId: id },
+          });
+        }
+
+        if (client.documents) {
+          if (client.documents.documents.length > 0) {
+            await tx.document.deleteMany({
+              where: { documentsId: client.documents.id },
+            });
+          }
+          await tx.documents.delete({
+            where: { id: client.documents.id },
+          });
+        }
+
+        if (client.familyInfo) {
+          if (client.familyInfo.familyMembers.length > 0) {
+            await tx.familyMember.deleteMany({
+              where: { familyInfoId: client.familyInfo.id },
+            });
+          }
+          if (client.familyInfo.successorPlans.length > 0) {
+            await tx.successorPlan.deleteMany({
+              where: { familyInfoId: client.familyInfo.id },
+            });
+          }
+          await tx.familyInfo.delete({
+            where: { id: client.familyInfo.id },
+          });
+        }
+
+        if (client.givingGoals) {
+          await tx.givingGoals.delete({
+            where: { id: client.givingGoals.id },
+          });
+        }
+
+        if (client.grantPreferences) {
+          await tx.grantPreferences.delete({
+            where: { id: client.grantPreferences.id },
+          });
+        }
+
+        if (client.primaryAddress) {
+          await tx.address.delete({
+            where: { id: client.primaryAddress.id },
+          });
+        }
+
+        if (client.alternateAddress) {
+          await tx.address.delete({
+            where: { id: client.alternateAddress.id },
+          });
+        }
+
+        await tx.clientPreferences.delete({
+          where: { id: client.preferences.id },
+        });
+
+        await tx.compliance.delete({
+          where: { id: client.compliance.id },
+        });
+
+        await tx.access.delete({
+          where: { id: client.access.id },
+        });
+
+        await tx.client.delete({
+          where: { id },
+        });
+
+        return client;
+      });
+    } catch (error) {
+      console.error('Error deleting client:', error);
+      throw error;
     }
-
-    // Delete everything in the correct order to respect foreign key constraints
-    await prisma.$transaction(async (tx) => {
-      // Delete invitations
-      if (client.invitations.length > 0) {
-        await tx.clientAccessInvitation.deleteMany({
-          where: { clientId: id },
-        });
-      }
-
-      // Delete DAFs and other accounts
-      if (client.dafs.length > 0) {
-        await tx.dAFAccount.deleteMany({
-          where: { clientId: id },
-        });
-      }
-      if (client.otherAccounts.length > 0) {
-        await tx.otherGivingAccount.deleteMany({
-          where: { clientId: id },
-        });
-      }
-
-      // Delete documents
-      if (client.documents) {
-        if (client.documents.documents.length > 0) {
-          await tx.document.deleteMany({
-            where: { documentsId: client.documents.id },
-          });
-        }
-        await tx.documents.delete({
-          where: { id: client.documents.id },
-        });
-      }
-
-      // Delete family info and related records
-      if (client.familyInfo) {
-        if (client.familyInfo.familyMembers.length > 0) {
-          await tx.familyMember.deleteMany({
-            where: { familyInfoId: client.familyInfo.id },
-          });
-        }
-        if (client.familyInfo.successorPlans.length > 0) {
-          await tx.successorPlan.deleteMany({
-            where: { familyInfoId: client.familyInfo.id },
-          });
-        }
-        await tx.familyInfo.delete({
-          where: { id: client.familyInfo.id },
-        });
-      }
-
-      // Delete giving goals and grant preferences
-      if (client.givingGoals) {
-        await tx.givingGoals.delete({
-          where: { id: client.givingGoals.id },
-        });
-      }
-      if (client.grantPreferences) {
-        await tx.grantPreferences.delete({
-          where: { id: client.grantPreferences.id },
-        });
-      }
-
-      // Delete addresses
-      if (client.primaryAddress) {
-        await tx.address.delete({
-          where: { id: client.primaryAddress.id },
-        });
-      }
-      if (client.alternateAddress) {
-        await tx.address.delete({
-          where: { id: client.alternateAddress.id },
-        });
-      }
-
-      // Delete preferences, compliance, and access
-      await tx.clientPreferences.delete({
-        where: { id: client.preferences.id },
-      });
-      await tx.compliance.delete({
-        where: { id: client.compliance.id },
-      });
-      await tx.access.delete({
-        where: { id: client.access.id },
-      });
-
-      // Finally, delete the client
-      await tx.client.delete({
-        where: { id },
-      });
-    });
-
-    return client;
   },
 
   async createClientProfile(data: MinimumClientCreation): Promise<ClientProfile> {
@@ -536,5 +626,43 @@ export const clientService = {
       },
     });
     return clients.map(client => this.transformClientToProfile(client));
+  },
+
+  async archiveClient(id: string) {
+    try {
+      const client = await prisma.client.update({
+        where: { id },
+        data: {
+          status: 'ARCHIVED',
+        },
+        include: {
+          primaryAddress: true,
+          alternateAddress: true,
+          preferences: true,
+          compliance: true,
+          access: true,
+          dafs: true,
+          givingGoals: true,
+          grantPreferences: true,
+          familyInfo: {
+            include: {
+              familyMembers: true,
+              successorPlans: true,
+            },
+          },
+          documents: {
+            include: {
+              documents: true,
+            },
+          },
+          otherAccounts: true,
+        },
+      });
+
+      return this.transformClientToProfile(client);
+    } catch (error) {
+      console.error('Error archiving client:', error);
+      throw error;
+    }
   },
 }; 
