@@ -1,16 +1,37 @@
 'use client';
 
-import { Container, Stack, Title, Grid } from '@mantine/core';
+import { Container, Stack, Title, Grid, Group } from '@mantine/core';
 import { MetricsGrid } from '@/components/dashboard/metrics-grid';
 import { ChartsSection } from '@/components/dashboard/charts-section';
 import { ActivityFeed } from '@/components/dashboard/activity-feed';
 import { ChatInterface } from '@/components/chat/chat-interface';
 import { ClientsHero } from '@/components/clients/clients-hero';
+import { ClientSelector } from '@/components/client/client-selector';
 import { useState } from 'react';
 import { Message } from '@/lib/services/chat-service';
 import { Inter } from 'next/font/google';
 
 const inter = Inter({ subsets: ['latin'] });
+
+// Mock clients data
+const mockClients = [
+  {
+    id: '1',
+    name: 'John Doe',
+    email: 'john@example.com',
+    dafs: 2,
+    totalValue: 2800000,
+    lastActivity: '2024-02-20',
+  },
+  {
+    id: '2',
+    name: 'Jane Smith',
+    email: 'jane@example.com',
+    dafs: 1,
+    totalValue: 1500000,
+    lastActivity: '2024-02-19',
+  },
+];
 
 // Mock data for metrics
 const metricsData = {
@@ -79,6 +100,8 @@ const activityData = [
 export default function DashboardPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  const [clients, setClients] = useState(mockClients);
 
   const handleSendMessage = async (content: string) => {
     const userMessage: Message = { role: 'user', content };
@@ -108,12 +131,33 @@ export default function DashboardPage() {
     setMessages([]);
   };
 
+  const handleAddClient = async (name: string, email: string) => {
+    // In a real app, this would make an API call
+    const newClient = {
+      id: (clients.length + 1).toString(),
+      name,
+      email,
+      dafs: 0,
+      totalValue: 0,
+      lastActivity: new Date().toISOString(),
+    };
+    setClients([...clients, newClient]);
+  };
+
   return (
     <Container size="xl" pb={0}>
       <Stack gap="xl" className={inter.className}>
         <ClientsHero />
         
-        <Title fw={400}>Dashboard</Title>
+        <Group justify="space-between" align="center">
+          <Title fw={400}>Dashboard</Title>
+          <ClientSelector
+            clients={clients}
+            selectedClientId={selectedClientId}
+            onClientChange={setSelectedClientId}
+            onAddClient={handleAddClient}
+          />
+        </Group>
         
         <MetricsGrid data={metricsData} loading={false} />
         

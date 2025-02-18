@@ -2,11 +2,20 @@
 
 import { useState } from 'react';
 import { ActionIcon, Group, Modal, Select, Stack, TextInput } from '@mantine/core';
-import { IconPlus } from '@tabler/icons-react';
+import { IconPlus, IconUser } from '@tabler/icons-react';
 import { ClientSummary } from '@/types/client';
 
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  dafs: number;
+  totalValue: number;
+  lastActivity: string;
+}
+
 interface ClientSelectorProps {
-  clients: ClientSummary[];
+  clients: Client[];
   selectedClientId: string | null;
   onClientChange: (clientId: string) => void;
   onAddClient: (name: string, email: string) => Promise<void>;
@@ -43,14 +52,17 @@ export function ClientSelector({
     <>
       <Group gap="xs">
         <Select
-          placeholder="Select a client"
-          data={clients.map(client => ({
+          placeholder="Select client"
+          value={selectedClientId}
+          onChange={(value) => value && onClientChange(value)}
+          data={clients.map((client) => ({
             value: client.id,
             label: client.name,
           }))}
-          value={selectedClientId}
-          onChange={value => value && onClientChange(value)}
-          style={{ minWidth: 200 }}
+          leftSection={<IconUser size={16} />}
+          clearable
+          searchable
+          w={250}
         />
         <ActionIcon
           variant="light"
