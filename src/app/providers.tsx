@@ -5,6 +5,8 @@ import { Notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState } from 'react';
+import { AuthProvider } from '@/lib/contexts/auth-context';
+import { UserProvider } from '@/lib/contexts/user-context';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({
@@ -20,7 +22,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <QueryClientProvider client={queryClient}>
       <MantineProvider>
         <Notifications />
-        {children}
+        <AuthProvider>
+          <UserProvider>
+            {children}
+          </UserProvider>
+        </AuthProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </MantineProvider>
     </QueryClientProvider>

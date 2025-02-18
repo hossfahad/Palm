@@ -1,20 +1,11 @@
-import { Inter } from 'next/font/google';
-import type { Metadata } from 'next';
-import { ColorSchemeScript } from '@mantine/core';
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
-import '@mantine/code-highlight/styles.css';
-import '@mantine/dates/styles.css';
-import '@mantine/dropzone/styles.css';
-import '@mantine/spotlight/styles.css';
-import './globals.css';
+import { ColorSchemeScript } from '@mantine/core';
 import { Providers } from './providers';
 
-const inter = Inter({ subsets: ['latin'] });
-
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Palm Philanthropy',
-  description: 'Manage your philanthropic activities and DAF operations',
+  description: 'Empowering charitable giving through technology',
 };
 
 export default function RootLayout({
@@ -27,8 +18,10 @@ export default function RootLayout({
       <head>
         <ColorSchemeScript />
       </head>
-      <body className={inter.className}>
-        <Providers>{children}</Providers>
+      <body>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );
