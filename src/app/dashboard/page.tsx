@@ -79,7 +79,12 @@ const activityData = [
 ];
 
 export default function DashboardPage() {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: 'assistant',
+      content: "Hi there! Ask me about any charity or non-profit."
+    }
+  ]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const { clients, isCreating } = useClients();

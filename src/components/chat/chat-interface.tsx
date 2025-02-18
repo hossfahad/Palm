@@ -34,21 +34,6 @@ export function ChatInterface({
     }
   }, [messages, isLoading]);
 
-  // Add default welcome message
-  useEffect(() => {
-    if (messages.length === 0) {
-      const welcomeMessage: Message = {
-        role: 'assistant',
-        content: 'Ask me about any charity or non-profit',
-      };
-      if (externalMessages) {
-        onSendMessage?.(welcomeMessage.content);
-      } else {
-        setLocalMessages([welcomeMessage]);
-      }
-    }
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
@@ -97,7 +82,7 @@ export function ChatInterface({
             background: 'linear-gradient(180deg, rgba(148, 163, 141, 0.1) 0%, rgba(255, 255, 255, 0) 100%)',
           }}
         >
-          <Text fw={500} c="gray.8">AI Assistant</Text>
+          <Text fw={500} c="gray.8">Ask Palm</Text>
           {onReset && (
             <ActionIcon
               variant="subtle"
@@ -129,7 +114,7 @@ export function ChatInterface({
                   radius="xl"
                   color={message.role === 'user' ? 'blue' : 'teal'}
                 >
-                  {message.role === 'user' ? 'U' : 'A'}
+                  {message.role === 'user' ? 'U' : 'P'}
                 </Avatar>
                 <Paper
                   p="xs"
@@ -182,7 +167,7 @@ export function ChatInterface({
             {isLoading && (
               <Group wrap="nowrap" align="flex-start" gap="sm">
                 <Avatar size="sm" radius="xl" color="teal">
-                  A
+                  P
                 </Avatar>
                 <Paper p="xs" radius="md" style={{ backgroundColor: 'rgba(148, 163, 141, 0.1)' }}>
                   <Text size="sm">Thinking...</Text>
