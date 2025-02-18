@@ -117,12 +117,130 @@ export const clientService = {
   },
 
   async deleteClient(id: string) {
-    return prisma.client.update({
+    // First delete all related records
+    const client = await prisma.client.findUnique({
       where: { id },
-      data: {
-        status: 'ARCHIVED',
+      include: {
+        primaryAddress: true,
+        alternateAddress: true,
+        preferences: true,
+        compliance: true,
+        access: true,
+        documents: {
+          include: {
+            documents: true,
+          },
+        },
+        familyInfo: {
+          include: {
+            familyMembers: true,
+            successorPlans: true,
+          },
+        },
+        givingGoals: true,
+        grantPreferences: true,
+        dafs: true,
+        otherAccounts: true,
+        invitations: true,
       },
     });
+
+    if (!client) {
+      throw new Error('Client not found');
+    }
+
+    // Delete everything in the correct order to respect foreign key constraints
+    await prisma.$transaction(async (tx) => {
+      // Delete invitations
+      if (client.invitations.length > 0) {
+        await tx.clientAccessInvitation.deleteMany({
+          where: { clientId: id },
+        });
+      }
+
+      // Delete DAFs and other accounts
+      if (client.dafs.length > 0) {
+        await tx.dAFAccount.deleteMany({
+          where: { clientId: id },
+        });
+      }
+      if (client.otherAccounts.length > 0) {
+        await tx.otherGivingAccount.deleteMany({
+          where: { clientId: id },
+        });
+      }
+
+      // Delete documents
+      if (client.documents) {
+        if (client.documents.documents.length > 0) {
+          await tx.document.deleteMany({
+            where: { documentsId: client.documents.id },
+          });
+        }
+        await tx.documents.delete({
+          where: { id: client.documents.id },
+        });
+      }
+
+      // Delete family info and related records
+      if (client.familyInfo) {
+        if (client.familyInfo.familyMembers.length > 0) {
+          await tx.familyMember.deleteMany({
+            where: { familyInfoId: client.familyInfo.id },
+          });
+        }
+        if (client.familyInfo.successorPlans.length > 0) {
+          await tx.successorPlan.deleteMany({
+            where: { familyInfoId: client.familyInfo.id },
+          });
+        }
+        await tx.familyInfo.delete({
+          where: { id: client.familyInfo.id },
+        });
+      }
+
+      // Delete giving goals and grant preferences
+      if (client.givingGoals) {
+        await tx.givingGoals.delete({
+          where: { id: client.givingGoals.id },
+        });
+      }
+      if (client.grantPreferences) {
+        await tx.grantPreferences.delete({
+          where: { id: client.grantPreferences.id },
+        });
+      }
+
+      // Delete addresses
+      if (client.primaryAddress) {
+        await tx.address.delete({
+          where: { id: client.primaryAddress.id },
+        });
+      }
+      if (client.alternateAddress) {
+        await tx.address.delete({
+          where: { id: client.alternateAddress.id },
+        });
+      }
+
+      // Delete preferences, compliance, and access
+      await tx.clientPreferences.delete({
+        where: { id: client.preferences.id },
+      });
+      await tx.compliance.delete({
+        where: { id: client.compliance.id },
+      });
+      await tx.access.delete({
+        where: { id: client.access.id },
+      });
+
+      // Finally, delete the client
+      await tx.client.delete({
+        where: { id },
+      });
+    });
+
+    return client;
   },
 
   async createClientProfile(data: MinimumClientCreation): Promise<ClientProfile> {

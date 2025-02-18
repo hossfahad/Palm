@@ -1,4 +1,4 @@
-import { Box, Group } from '@mantine/core';
+import { Box, Group, Avatar } from '@mantine/core';
 import { Logo } from '@/components/brand/logo';
 import Link from 'next/link';
 
@@ -15,6 +15,11 @@ export function StickyHeader() {
         <Link href="/dashboard" style={{ textDecoration: 'none' }}>
           <Logo size="md" />
         </Link>
+        <Avatar 
+          radius="xl" 
+          size="md"
+          style={{ cursor: 'pointer' }}
+        />
       </Group>
     </Box>
   );

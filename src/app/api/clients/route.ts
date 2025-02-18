@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { clientService } from '@/lib/services/client-service';
 import { z } from 'zod';
+import { createClientSchema } from '@/lib/validations/client';
+import { ZodError } from 'zod';
 
 // Validation schema for creating/updating clients
 const clientSchema = z.object({
@@ -39,34 +41,38 @@ export async function GET(request: Request) {
     const clients = await clientService.getClients();
     return NextResponse.json(clients);
   } catch (error) {
-    console.error('Failed to fetch clients:', error);
+    console.error('Error fetching clients:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch clients' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    
-    // Validate and transform request body
-    const validatedData = clientSchema.parse(body);
-    
-    const client = await clientService.createClient(validatedData);
+    const json = await req.json();
+    const body = createClientSchema.parse(json);
+
+    const client = await clientService.createClient({
+      ...body,
+      dateOfBirth: body.dateOfBirth ? new Date(body.dateOfBirth) : undefined,
+      relationshipStartDate: new Date(body.relationshipStartDate),
+    });
+
     return NextResponse.json(client, { status: 201 });
   } catch (error) {
-    if (error instanceof z.ZodError) {
+    console.error('Error creating client:', error);
+    
+    if (error instanceof ZodError) {
       return NextResponse.json(
-        { error: 'Validation failed', details: error.errors },
+        { error: 'Invalid request data', details: error.errors },
         { status: 400 }
       );
     }
-    
-    console.error('Failed to create client:', error);
+
     return NextResponse.json(
-      { error: 'Failed to create client' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }

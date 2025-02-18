@@ -10,28 +10,9 @@ import { ClientSelector } from '@/components/client/client-selector';
 import { useState } from 'react';
 import { Message } from '@/lib/services/chat-service';
 import { Inter } from 'next/font/google';
+import { useClients } from '@/hooks/use-clients';
 
 const inter = Inter({ subsets: ['latin'] });
-
-// Mock clients data
-const mockClients = [
-  {
-    id: '1',
-    name: 'John Doe',
-    email: 'john@example.com',
-    dafs: 2,
-    totalValue: 2800000,
-    lastActivity: '2024-02-20',
-  },
-  {
-    id: '2',
-    name: 'Jane Smith',
-    email: 'jane@example.com',
-    dafs: 1,
-    totalValue: 1500000,
-    lastActivity: '2024-02-19',
-  },
-];
 
 // Mock data for metrics
 const metricsData = {
@@ -101,7 +82,7 @@ export default function DashboardPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
-  const [clients, setClients] = useState(mockClients);
+  const { clients, addClient, isCreating } = useClients();
 
   const handleSendMessage = async (content: string) => {
     const userMessage: Message = { role: 'user', content };
@@ -132,17 +113,30 @@ export default function DashboardPage() {
   };
 
   const handleAddClient = async (name: string, email: string) => {
-    // In a real app, this would make an API call
-    const newClient = {
-      id: (clients.length + 1).toString(),
-      name,
+    const [firstName, ...lastNameParts] = name.split(' ');
+    const lastName = lastNameParts.join(' ');
+
+    await addClient({
+      firstName,
+      lastName,
       email,
-      dafs: 0,
-      totalValue: 0,
-      lastActivity: new Date().toISOString(),
-    };
-    setClients([...clients, newClient]);
+      status: 'PENDING',
+      advisorId: 'current-advisor-id', // This should come from your auth context
+      preferredContactMethod: 'email',
+      relationshipStartDate: new Date().toISOString(),
+      secondaryAdvisors: [],
+      causeAreas: [],
+    });
   };
+
+  const formattedClients = clients.map(client => ({
+    id: client.id,
+    name: `${client.firstName} ${client.lastName}`,
+    email: client.email,
+    dafs: client.dafs || 0,
+    totalValue: client.totalValue || 0,
+    lastActivity: client.lastActivity || new Date().toISOString(),
+  }));
 
   return (
     <Container size="xl" pb={0}>
@@ -152,7 +146,7 @@ export default function DashboardPage() {
         <Group justify="space-between" align="center">
           <Title fw={400}>Dashboard</Title>
           <ClientSelector
-            clients={clients}
+            clients={formattedClients}
             selectedClientId={selectedClientId}
             onClientChange={setSelectedClientId}
             onAddClient={handleAddClient}

@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Table, Menu, Badge, ActionIcon, Group } from '@mantine/core';
+import { Table, Menu, Badge, ActionIcon, Group, Text } from '@mantine/core';
 import { IconDots, IconPencil, IconTrash } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { useClients } from '@/hooks/use-clients';
-import { Client } from '@/lib/services/client-service';
 import { notifications } from '@mantine/notifications';
 
-const statusColors: Record<Client['status'], string> = {
+const statusColors: Record<'ACTIVE' | 'PENDING' | 'INACTIVE' | 'ARCHIVED', string> = {
   ACTIVE: 'green',
   PENDING: 'yellow',
   INACTIVE: 'gray',
@@ -14,8 +13,8 @@ const statusColors: Record<Client['status'], string> = {
 };
 
 export function ClientsTable() {
-  const { clients, isLoading, error, deleteClient } = useClients();
-  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const { clients, isLoading, error, deleteClient, isDeleting } = useClients();
+  const [selectedClient, setSelectedClient] = useState<string | null>(null);
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -27,7 +26,7 @@ export function ClientsTable() {
 
   const handleDelete = async (id: string) => {
     try {
-      await deleteClient.mutateAsync(id);
+      await deleteClient(id);
       notifications.show({
         title: 'Success',
         message: 'Client has been deleted successfully',
@@ -36,7 +35,7 @@ export function ClientsTable() {
     } catch (error) {
       notifications.show({
         title: 'Error',
-        message: 'Failed to delete client. Please try again.',
+        message: error instanceof Error ? error.message : 'Failed to delete client',
         color: 'red',
       });
     }
@@ -59,11 +58,13 @@ export function ClientsTable() {
           <Table.Tr key={client.id}>
             <Table.Td>
               <Group gap="sm">
-                {client.firstName} {client.lastName}
+                <Text>
+                  {client.firstName} {client.lastName}
+                </Text>
                 {client.preferredName && (
-                  <span style={{ color: 'gray', fontSize: '0.875rem' }}>
+                  <Text size="sm" c="dimmed">
                     ({client.preferredName})
-                  </span>
+                  </Text>
                 )}
               </Group>
             </Table.Td>
@@ -80,21 +81,28 @@ export function ClientsTable() {
             <Table.Td>
               <Menu position="bottom-end">
                 <Menu.Target>
-                  <ActionIcon variant="subtle" size="sm">
+                  <ActionIcon
+                    variant="subtle"
+                    size="sm"
+                    loading={isDeleting && selectedClient === client.id}
+                  >
                     <IconDots size="1rem" />
                   </ActionIcon>
                 </Menu.Target>
                 <Menu.Dropdown>
                   <Menu.Item
                     leftSection={<IconPencil size="1rem" />}
-                    onClick={() => setSelectedClient(client)}
+                    onClick={() => setSelectedClient(client.id)}
                   >
                     Edit
                   </Menu.Item>
                   <Menu.Item
                     leftSection={<IconTrash size="1rem" />}
                     color="red"
-                    onClick={() => handleDelete(client.id)}
+                    onClick={() => {
+                      setSelectedClient(client.id);
+                      handleDelete(client.id);
+                    }}
                   >
                     Delete
                   </Menu.Item>

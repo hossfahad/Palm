@@ -1,56 +1,85 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import axios from 'axios';
-import { Client } from '@/lib/services/client-service';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { CreateClientInput } from '@/lib/validations/client';
 
-const API_URL = '/api/clients';
+interface Client {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: 'ACTIVE' | 'PENDING' | 'INACTIVE' | 'ARCHIVED';
+  preferredName?: string;
+  advisorId: string;
+  relationshipStartDate: string;
+  dafs: number;
+  totalValue: number;
+  lastActivity: string;
+}
+
+async function fetchClients(): Promise<Client[]> {
+  const response = await fetch('/api/clients');
+  if (!response.ok) {
+    throw new Error('Failed to fetch clients');
+  }
+  return response.json();
+}
+
+async function createClient(data: CreateClientInput): Promise<Client> {
+  const response = await fetch('/api/clients', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to create client');
+  }
+
+  return response.json();
+}
+
+async function deleteClient(id: string): Promise<void> {
+  const response = await fetch(`/api/clients?id=${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to delete client');
+  }
+}
 
 export function useClients() {
   const queryClient = useQueryClient();
 
-  const { data: clients, isLoading, error } = useQuery<Client[]>({
+  const { data: clients = [], isLoading, error } = useQuery({
     queryKey: ['clients'],
-    queryFn: async () => {
-      const { data } = await axios.get(API_URL);
-      return data;
-    }
+    queryFn: fetchClients,
   });
 
-  const createClient = useMutation({
-    mutationFn: async (newClient: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const { data } = await axios.post(API_URL, newClient);
-      return data;
-    },
+  const { mutate: addClient, isPending: isCreating } = useMutation({
+    mutationFn: createClient,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-    }
+    },
   });
 
-  const updateClient = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Client, 'id' | 'createdAt' | 'updatedAt'>> }) => {
-      const { data: updatedClient } = await axios.put(`${API_URL}?id=${id}`, data);
-      return updatedClient;
-    },
+  const { mutate: removeClient, isPending: isDeleting } = useMutation({
+    mutationFn: deleteClient,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
-    }
-  });
-
-  const deleteClient = useMutation({
-    mutationFn: async (id: string) => {
-      const { data } = await axios.delete(`${API_URL}?id=${id}`);
-      return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clients'] });
-    }
   });
 
   return {
     clients,
     isLoading,
     error,
-    createClient,
-    updateClient,
-    deleteClient
+    addClient,
+    isCreating,
+    deleteClient: removeClient,
+    isDeleting,
   };
 } 

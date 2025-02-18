@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ActionIcon, Group, Modal, Select, Stack, TextInput } from '@mantine/core';
+import { ActionIcon, Group, Modal, Select, Stack, TextInput, Button } from '@mantine/core';
 import { IconPlus, IconUser } from '@tabler/icons-react';
-import { ClientSummary } from '@/types/client';
+import { useCreateClient } from '@/hooks/use-create-client';
+import { notifications } from '@mantine/notifications';
 
 interface Client {
   id: string;
@@ -30,21 +31,40 @@ export function ClientSelector({
   const [opened, setOpened] = useState(false);
   const [newClientName, setNewClientName] = useState('');
   const [newClientEmail, setNewClientEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { createClient, isLoading, error } = useCreateClient();
 
   const handleSubmit = async () => {
     if (!newClientName || !newClientEmail) return;
     
-    setIsSubmitting(true);
     try {
+      await createClient({
+        firstName: newClientName.split(' ')[0],
+        lastName: newClientName.split(' ').slice(1).join(' ') || '',
+        email: newClientEmail,
+        status: 'PENDING',
+        advisorId: 'current-advisor-id', // This should come from your auth context
+        preferredContactMethod: 'email',
+        relationshipStartDate: new Date().toISOString(),
+        secondaryAdvisors: [],
+        causeAreas: [],
+      });
+
       await onAddClient(newClientName, newClientEmail);
       setOpened(false);
       setNewClientName('');
       setNewClientEmail('');
+      
+      notifications.show({
+        title: 'Success',
+        message: 'Client created successfully',
+        color: 'green',
+      });
     } catch (error) {
-      console.error('Error adding client:', error);
-    } finally {
-      setIsSubmitting(false);
+      notifications.show({
+        title: 'Error',
+        message: error instanceof Error ? error.message : 'Failed to create client',
+        color: 'red',
+      });
     }
   };
 
@@ -86,6 +106,7 @@ export function ClientSelector({
             placeholder="Enter client name"
             value={newClientName}
             onChange={event => setNewClientName(event.currentTarget.value)}
+            error={error}
             data-autofocus
           />
           <TextInput
@@ -93,18 +114,18 @@ export function ClientSelector({
             placeholder="Enter client email"
             value={newClientEmail}
             onChange={event => setNewClientEmail(event.currentTarget.value)}
+            error={error}
           />
           <Group justify="flex-end">
-            <ActionIcon
+            <Button
               variant="filled"
-              size="lg"
               color="blue"
-              loading={isSubmitting}
+              loading={isLoading}
               onClick={handleSubmit}
               disabled={!newClientName || !newClientEmail}
             >
-              <IconPlus style={{ width: '70%', height: '70%' }} stroke={1.5} />
-            </ActionIcon>
+              Add Client
+            </Button>
           </Group>
         </Stack>
       </Modal>

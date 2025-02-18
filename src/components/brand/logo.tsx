@@ -1,5 +1,6 @@
 import { Group, Text } from '@mantine/core';
 import { Inter } from 'next/font/google';
+import { IconLeaf } from '@tabler/icons-react';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -16,11 +17,17 @@ export function Logo({ size = 'md', color, minimal = false }: LogoProps) {
     lg: 'text-3xl',
   };
 
+  const iconSizes = {
+    sm: 18,
+    md: 24,
+    lg: 32,
+  };
+
   if (minimal) {
     return (
       <Text
         className={`${sizes[size]} ${inter.className}`}
-        style={{ color: color || 'var(--mantine-color-sage-7)' }}
+        style={{ color: color || 'var(--mantine-color-dark-9)' }}
       >
         P
       </Text>
@@ -28,24 +35,16 @@ export function Logo({ size = 'md', color, minimal = false }: LogoProps) {
   }
 
   return (
-    <Group gap={4} className={inter.className}>
+    <Group gap="xs" align="center" className={inter.className}>
+      <IconLeaf size={iconSizes[size]} style={{ color: color || 'var(--mantine-color-dark-9)' }} />
       <Text
         className={sizes[size]}
         style={{ 
-          color: color || 'var(--mantine-color-sage-7)',
+          color: color || 'var(--mantine-color-dark-9)',
           fontWeight: 400
         }}
       >
         Palm
-      </Text>
-      <Text
-        className={sizes[size]}
-        style={{ 
-          color: color || 'var(--mantine-color-sage-7)',
-          fontWeight: 400
-        }}
-      >
-        Philanthropy
       </Text>
     </Group>
   );
