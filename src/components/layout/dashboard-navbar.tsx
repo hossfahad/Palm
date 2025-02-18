@@ -1,89 +1,136 @@
 'use client';
 
-import { Stack, ActionIcon, Tooltip, Avatar, Menu } from '@mantine/core';
+import { Stack, ActionIcon, Tooltip, Avatar, Menu, Box } from '@mantine/core';
 import {
   IconHome,
   IconBuildingStore,
   IconSettings,
+  IconUsers,
   IconLogout,
   IconUser,
-  IconUsers,
+  IconLeaf,
 } from '@tabler/icons-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { Inter } from 'next/font/google';
+
+const inter = Inter({ subsets: ['latin'] });
 
 export function DashboardNavbar() {
   const pathname = usePathname();
+  const router = useRouter();
 
   const navItems = [
-    { icon: IconHome, label: 'Dashboard', href: '/dashboard' },
+    { icon: IconHome, label: 'Dashboard', href: '/dashboard', exact: true },
     { 
       icon: IconBuildingStore, 
       label: 'Marketplace', 
       href: '/dashboard/marketplace',
+      exact: false,
     },
     { 
       icon: IconUsers, 
       label: 'Clients', 
       href: '/dashboard/manage/clients',
+      exact: false,
     },
     { 
       icon: IconSettings, 
-      label: 'Permissions', 
-      href: '/dashboard/manage/permissions',
+      label: 'Settings', 
+      href: '/dashboard/settings',
+      exact: false,
     },
   ];
 
-  const isActive = (href: string) => pathname.startsWith(href);
+  const isActive = (href: string, exact: boolean) => {
+    if (exact) {
+      return pathname === href;
+    }
+    return pathname.startsWith(href);
+  };
+
+  const handleSignOut = async () => {
+    // TODO: Implement new sign out logic
+    router.push('/');
+  };
 
   return (
-    <Stack h="100%" justify="space-between" align="center">
-      <Stack gap="xs" align="center">
-        <Menu shadow="md" width={200} position="right-start">
+    <Stack 
+      h="100%" 
+      py="md" 
+      px="xs" 
+      justify="space-between"
+      style={{
+        backgroundColor: 'white',
+        width: '4rem',
+      }}
+    >
+      <Stack gap="xl" align="center">
+        <Box py="md">
+          <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+            <ActionIcon
+              variant="subtle"
+              color="sage"
+              size="xl"
+              aria-label="Home"
+            >
+              <IconLeaf size={24} />
+            </ActionIcon>
+          </Link>
+        </Box>
+
+        <Stack gap="lg">
+          {navItems.map((item) => (
+            <Link key={item.href} href={item.href} passHref>
+              <Tooltip 
+                label={item.label} 
+                position="right"
+                classNames={{
+                  tooltip: inter.className
+                }}
+              >
+                <ActionIcon
+                  variant={isActive(item.href, item.exact) ? 'filled' : 'subtle'}
+                  aria-label={item.label}
+                  size="xl"
+                  color="sage"
+                >
+                  <item.icon size={24} />
+                </ActionIcon>
+              </Tooltip>
+            </Link>
+          ))}
+        </Stack>
+      </Stack>
+
+      <Box px="xs">
+        <Menu shadow="md" width={200} position="right">
           <Menu.Target>
-            <Avatar size="md" radius="xl" style={{ cursor: 'pointer' }} />
+            <Avatar 
+              radius="xl" 
+              size="md"
+              style={{ cursor: 'pointer' }}
+            />
           </Menu.Target>
 
-          <Menu.Dropdown>
+          <Menu.Dropdown className={inter.className}>
             <Menu.Label>Account</Menu.Label>
             <Menu.Item
-              component={Link}
-              href="/dashboard/profile"
-              leftSection={<IconUser size={14} />}
+              leftSection={<IconUser style={{ width: 14, height: 14 }} />}
             >
-              Profile Settings
+              Profile
             </Menu.Item>
             <Menu.Divider />
             <Menu.Item
               color="red"
-              leftSection={<IconLogout size={14} />}
+              leftSection={<IconLogout style={{ width: 14, height: 14 }} />}
+              onClick={handleSignOut}
             >
-              Logout
+              Sign out
             </Menu.Item>
           </Menu.Dropdown>
         </Menu>
-        
-        {navItems.map((item) => (
-          <Tooltip
-            key={item.href}
-            label={item.label}
-            position="right"
-            withArrow
-            transitionProps={{ duration: 0 }}
-          >
-            <ActionIcon
-              component={Link}
-              href={item.href}
-              variant={isActive(item.href) ? 'light' : 'subtle'}
-              color={isActive(item.href) ? 'sage' : 'gray'}
-              size="lg"
-              radius="md"
-            >
-              <item.icon size={20} stroke={1.5} />
-            </ActionIcon>
-          </Tooltip>
-        ))}
-      </Stack>
+      </Box>
     </Stack>
   );
 } 

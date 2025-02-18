@@ -12,8 +12,16 @@ import {
   Menu,
   TextInput,
 } from '@mantine/core';
-import { IconSearch, IconDotsVertical, IconEdit, IconTrash, IconUserPlus } from '@tabler/icons-react';
+import { 
+  IconSearch, 
+  IconDotsVertical, 
+  IconEdit, 
+  IconTrash, 
+  IconUserPlus,
+  IconShare,
+} from '@tabler/icons-react';
 import { PageHeader } from '@/components/layout/page-header';
+import { ShareAccessModal } from '@/components/client/share-access-modal';
 
 interface Client {
   id: string;
@@ -45,12 +53,19 @@ const mockClients: Client[] = [
 
 export default function ClientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
   const filteredClients = mockClients.filter(
     client => 
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       client.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleShareAccess = (client: Client) => {
+    setSelectedClient(client);
+    setShareModalOpen(true);
+  };
 
   return (
     <Stack gap="xl">
@@ -109,6 +124,12 @@ export default function ClientsPage() {
                           Edit Client
                         </Menu.Item>
                         <Menu.Item 
+                          leftSection={<IconShare size={14} />}
+                          onClick={() => handleShareAccess(client)}
+                        >
+                          Share Access
+                        </Menu.Item>
+                        <Menu.Item 
                           leftSection={<IconTrash size={14} />}
                           color="red"
                         >
@@ -123,6 +144,18 @@ export default function ClientsPage() {
           </Table>
         </Stack>
       </Card>
+
+      {selectedClient && (
+        <ShareAccessModal
+          clientId={selectedClient.id}
+          clientName={selectedClient.name}
+          opened={shareModalOpen}
+          onClose={() => {
+            setShareModalOpen(false);
+            setSelectedClient(null);
+          }}
+        />
+      )}
     </Stack>
   );
 } 

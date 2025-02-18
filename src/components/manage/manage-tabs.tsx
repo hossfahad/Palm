@@ -12,10 +12,9 @@ export function ManageTabs({ children }: ManageTabsProps) {
   const pathname = usePathname();
 
   const getActiveTab = () => {
-    if (pathname.includes('/profile')) return 'profile';
     if (pathname.includes('/clients')) return 'clients';
     if (pathname.includes('/permissions')) return 'permissions';
-    return 'profile'; // Default tab
+    return 'clients'; // Default tab changed to clients
   };
 
   return (
@@ -26,7 +25,6 @@ export function ManageTabs({ children }: ManageTabsProps) {
       }}
     >
       <Tabs.List>
-        <Tabs.Tab value="profile">Profile</Tabs.Tab>
         <Tabs.Tab value="clients">Clients</Tabs.Tab>
         <Tabs.Tab value="permissions">Permissions</Tabs.Tab>
       </Tabs.List>

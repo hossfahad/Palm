@@ -62,6 +62,13 @@ enum KYCStatus {
   rejected
 }
 
+enum DocumentType {
+  AGREEMENT
+  TAX
+  GRANT_LETTER
+  CORRESPONDENCE
+}
+
 model Client {
   id        String      @id @default(cuid())
   status    ClientStatus
@@ -118,6 +125,8 @@ model Client {
   // Access Management
   access        Access @relation(fields: [accessId], references: [id])
   accessId      String @unique
+
+  invitations        ClientAccessInvitation[]
 }
 
 model Address {
@@ -214,23 +223,20 @@ model FamilyInfo {
 }
 
 model Document {
-  id            String    @id @default(cuid())
-  type          String
+  id            String      @id @default(cuid())
+  type          String      // "AGREEMENT" | "TAX" | "GRANT_LETTER" | "CORRESPONDENCE"
   name          String
   url           String
   uploadedAt    DateTime
-  documents     Documents @relation(fields: [documentsId], references: [id])
+  documents     Documents   @relation(fields: [documentsId], references: [id])
   documentsId   String
 }
 
 model Documents {
   id            String     @id @default(cuid())
-  agreements    Document[] @relation()
-  taxDocuments  Document[]
-  grantLetters  Document[]
-  correspondence Document[]
-  client        Client    @relation(fields: [clientId], references: [id])
-  clientId      String    @unique
+  documents     Document[]
+  client        Client     @relation(fields: [clientId], references: [id])
+  clientId      String     @unique
 }
 
 model Compliance {
@@ -243,10 +249,40 @@ model Compliance {
 }
 
 model Access {
-  id              String    @id @default(cuid())
-  portalAccess    Boolean
-  lastLogin       DateTime?
-  loginMethod     String?
-  twoFactorEnabled Boolean
-  client          Client?
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Access Control
+  canView       Boolean   @default(false)
+  canEdit       Boolean   @default(false)
+  canDelete     Boolean   @default(false)
+  canInvite     Boolean   @default(false)
+  
+  // Specific Permissions
+  grantAccess   Boolean   @default(false)
+  reportAccess  Boolean   @default(false)
+  documentAccess Boolean  @default(false)
+  
+  // Role-based Access
+  role          String?
+  customPermissions Json?
+  
+  // Relationships
+  client        Client?
+  invitations   ClientAccessInvitation[]
+}
+
+model ClientAccessInvitation {
+  id            String    @id @default(cuid())
+  createdAt     DateTime  @default(now())
+  expiresAt     DateTime
+  email         String
+  status        String    // "PENDING" | "ACCEPTED" | "EXPIRED"
+  
+  // Relationships
+  access        Access    @relation(fields: [accessId], references: [id])
+  accessId      String
+  client        Client    @relation(fields: [clientId], references: [id])
+  clientId      String
 } 

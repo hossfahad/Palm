@@ -1,38 +1,31 @@
 'use client';
 
 import { AppShell } from '@mantine/core';
-import { useDisclosure } from '@mantine/hooks';
-import { ReactNode } from 'react';
-import { DashboardNavbar } from '@/components/layout/dashboard-navbar';
+import { DashboardNavbar } from './dashboard-navbar';
 import { StickyHeader } from './sticky-header';
 
-interface DashboardShellProps {
-  children: ReactNode;
-}
-
-export function DashboardShell({ children }: DashboardShellProps) {
-  const [opened, { toggle }] = useDisclosure();
-
+export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <AppShell
+      padding="md"
       header={{ height: 60 }}
       navbar={{
-        width: 80,
+        width: { base: 64 },
         breakpoint: 'sm',
-        collapsed: { mobile: !opened },
+        collapsed: { mobile: false }
       }}
-      padding={0}
       styles={{
-        navbar: {
-          borderRight: '1px solid var(--mantine-color-gray-2)',
-          zIndex: 2,
-        },
         main: {
-          backgroundColor: 'var(--mantine-color-gray-0)',
-          paddingLeft: 'calc(80px + var(--mantine-spacing-md))', // navbar width + padding
+          background: 'var(--mantine-color-gray-0)',
+        },
+        navbar: {
+          backgroundColor: 'white',
+          borderRight: '1px solid var(--mantine-color-gray-2)',
+          width: '4rem !important',
         },
         header: {
-          paddingLeft: 'calc(80px + var(--mantine-spacing-md))', // navbar width + padding
+          backgroundColor: 'white',
+          borderBottom: '1px solid var(--mantine-color-gray-2)',
         }
       }}
     >
@@ -40,7 +33,7 @@ export function DashboardShell({ children }: DashboardShellProps) {
         <StickyHeader />
       </AppShell.Header>
 
-      <AppShell.Navbar p="md">
+      <AppShell.Navbar>
         <DashboardNavbar />
       </AppShell.Navbar>
 

@@ -5,14 +5,13 @@ import Link from 'next/link';
 export function StickyHeader() {
   return (
     <Box
+      h={60}
       style={{
-        position: 'sticky',
-        top: 0,
-        backgroundColor: 'transparent',
-        zIndex: 1,
+        backgroundColor: 'white',
+        borderBottom: '1px solid var(--mantine-color-gray-2)',
       }}
     >
-      <Group py="md" px="md">
+      <Group h="100%" px="md" justify="space-between">
         <Link href="/dashboard" style={{ textDecoration: 'none' }}>
           <Logo size="md" />
         </Link>

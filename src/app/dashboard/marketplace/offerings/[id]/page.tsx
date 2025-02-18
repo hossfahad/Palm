@@ -19,7 +19,6 @@ import {
 import { IconCheck, IconArrowLeft, IconDownload, IconChartBar, IconQuestionMark } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { DAFIcon } from '@/components/icons/daf-icon';
 
 interface DAFProgram {
   id: string;
@@ -169,7 +168,6 @@ export default function DAFDetailsPage() {
             </Grid>
           </Stack>
         </Container>
-        <DAFIcon />
       </Box>
 
       <Box bg="var(--mantine-color-gray-0)" style={{ borderTop: '1px solid var(--mantine-color-gray-2)' }}>
