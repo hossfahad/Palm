@@ -59,7 +59,7 @@ async function createClient(data: CreateClientInput): Promise<Client> {
   return response.json();
 }
 
-async function updateClient({ id, data }: { id: string; data: Partial<CreateClientInput> }): Promise<Client> {
+async function updateClient({ id, data }: { id: string; data: Partial<Client> }): Promise<Client> {
   const response = await fetch(`/api/clients?id=${id}`, {
     method: 'PUT',
     headers: {

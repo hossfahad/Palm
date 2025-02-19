@@ -634,6 +634,7 @@ export const clientService = {
         where: { id },
         data: {
           status: 'ARCHIVED',
+          updatedAt: new Date(),
         },
         include: {
           primaryAddress: true,
@@ -658,6 +659,10 @@ export const clientService = {
           otherAccounts: true,
         },
       });
+
+      if (!client) {
+        throw new Error('Client not found');
+      }
 
       return this.transformClientToProfile(client);
     } catch (error) {
