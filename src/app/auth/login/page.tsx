@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Container, Paper, Title, TextInput, Button, Stack, Text, Anchor, Alert } from '@mantine/core';
+import { Container, Paper, Title, TextInput, Button, Stack, Text, Anchor, Alert, Box } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { IconAlertCircle } from '@tabler/icons-react';
+import { Logo } from '@/components/brand/logo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -90,6 +91,10 @@ export default function LoginPage() {
   return (
     <Container size="xs" py="xl">
       <Paper radius="md" p="xl" withBorder>
+        <Stack align="center" mb="xl">
+          <Logo size="lg" />
+        </Stack>
+
         <Title order={2} mb="md" ta="center">Welcome back</Title>
 
         {error === 'auth_callback_failed' && (
