@@ -1,49 +1,34 @@
-import { prisma } from '@/lib/db';
-import { ClientProfile, MinimumClientCreation, ClientStatus, GivingVehicle, ReportType, Address, FamilyMember, SuccessorPlan, OtherGivingAccount, Document } from '@/types/client';
+import { eq, desc, and } from 'drizzle-orm';
+import { db } from '@/lib/db';
+import { clients, clientPreferences, compliance, access, addresses, familyInfo, documents, familyMembers, successorPlans, dafAccounts, otherGivingAccounts } from '@/lib/schema';
+import type { Client, ClientPreferences, Compliance, Access, Address, FamilyInfo, Documents, FamilyMember, SuccessorPlan, DAFAccount, OtherGivingAccount } from '@/lib/schema';
+import type { ClientProfile, MinimumClientCreation, Document } from '@/types/client';
+import { createId } from '@paralleldrive/cuid2';
 
-export interface Client {
-  id: string;
-  status: 'ACTIVE' | 'PENDING' | 'INACTIVE' | 'ARCHIVED';
-  createdAt: Date;
-  updatedAt: Date;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone?: string;
-  dateOfBirth?: Date;
-  preferredName?: string;
-  preferredPronouns?: string;
-  advisorId: string;
-  relationshipStartDate: Date;
-  firmClientId?: string;
-  secondaryAdvisors: string[];
-  relationshipManager?: string;
-  causeAreas: string[];
-  preferredContactMethod: string;
-}
-
-// Helper function to convert camelCase to snake_case for SQL
-const toSnakeCase = (str: string): string => {
-  return str.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
+// Re-export types from the schema
+export type {
+  Client,
+  ClientPreferences,
+  Compliance,
+  Access,
+  Address,
+  FamilyInfo,
+  Documents,
+  FamilyMember,
+  SuccessorPlan,
+  DAFAccount,
+  OtherGivingAccount,
 };
 
 export const clientService = {
   async getClients() {
     try {
-      return await prisma.client.findMany({
-        orderBy: {
-          createdAt: 'desc',
-        },
-        include: {
-          primaryAddress: true,
-          preferences: true,
-          compliance: true,
-          access: true,
-          dafs: true,
-          givingGoals: true,
-          grantPreferences: true,
-        },
-      });
+      const results = await db
+        .select()
+        .from(clients)
+        .orderBy(desc(clients.createdAt));
+
+      return results;
     } catch (error) {
       console.error('Error fetching clients:', error);
       throw new Error('Failed to fetch clients');
@@ -52,153 +37,136 @@ export const clientService = {
 
   async getClientById(id: string) {
     try {
-      const client = await prisma.client.findUnique({
-        where: { id },
-        include: {
-          primaryAddress: true,
-          alternateAddress: true,
-          preferences: true,
-          compliance: true,
-          access: true,
-          dafs: true,
-          givingGoals: true,
-          grantPreferences: true,
-          familyInfo: {
-            include: {
-              familyMembers: true,
-              successorPlans: true,
-            },
-          },
-          documents: {
-            include: {
-              documents: true,
-            },
-          },
-          otherAccounts: true,
-        },
-      });
+      const [client] = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.id, id))
+        .limit(1);
 
       if (!client) {
         throw new Error('Client not found');
       }
 
-      return this.transformClientToProfile(client);
+      // Fetch related data
+      const [
+        preferences,
+        clientCompliance,
+        clientAccess,
+        primaryAddress,
+        alternateAddress,
+        clientFamilyInfo,
+        clientDocuments,
+        dafs,
+        otherAccounts,
+      ] = await Promise.all([
+        db.select().from(clientPreferences).where(eq(clientPreferences.id, client.preferencesId)).limit(1),
+        db.select().from(compliance).where(eq(compliance.id, client.complianceId)).limit(1),
+        db.select().from(access).where(eq(access.id, client.accessId)).limit(1),
+        db.select().from(addresses).where(eq(addresses.id, client.primaryAddressId)).limit(1),
+        client.alternateAddressId 
+          ? db.select().from(addresses).where(eq(addresses.id, client.alternateAddressId)).limit(1)
+          : Promise.resolve([]),
+        client.familyInfoId
+          ? db.select().from(familyInfo).where(eq(familyInfo.id, client.familyInfoId)).limit(1)
+          : Promise.resolve([]),
+        client.documentsId
+          ? db.select().from(documents).where(eq(documents.id, client.documentsId)).limit(1)
+          : Promise.resolve([]),
+        db.select().from(dafAccounts).where(eq(dafAccounts.clientId, client.id)),
+        db.select().from(otherGivingAccounts).where(eq(otherGivingAccounts.clientId, client.id)),
+      ]);
+
+      // Transform and return the complete client profile
+      return this.transformClientToProfile({
+        ...client,
+        preferences: preferences[0],
+        compliance: clientCompliance[0],
+        access: clientAccess[0],
+        primaryAddress: primaryAddress[0],
+        alternateAddress: alternateAddress[0],
+        familyInfo: clientFamilyInfo[0],
+        documents: clientDocuments[0],
+        dafs,
+        otherAccounts,
+      });
     } catch (error) {
       console.error('Error fetching client:', error);
       throw error;
     }
   },
 
-  async createClient(client: Omit<Client, 'id' | 'createdAt' | 'updatedAt'>) {
+  async createClient(data: MinimumClientCreation) {
     try {
       // Create required related records first
-      const [preferences, compliance, access, primaryAddress] = await Promise.all([
-        prisma.clientPreferences.create({
-          data: {
-            communicationFrequency: 'monthly',
-            reportingPreferences: [],
-            marketingConsent: false,
-            languagePreference: 'en-US',
-          },
-        }),
-        prisma.compliance.create({
-          data: {
-            kycStatus: 'pending',
-            restrictions: [],
-          },
-        }),
-        prisma.access.create({
-          data: {
-            canView: true,
-            canEdit: false,
-            canDelete: false,
-            canInvite: false,
-            grantAccess: false,
-            reportAccess: false,
-            documentAccess: false,
-            role: 'client',
-          },
-        }),
-        prisma.address.create({
-          data: {
-            street1: '',
-            city: '',
-            state: '',
-            postalCode: '',
-            country: '',
-            type: 'home',
-          },
-        }),
+      const [preferences, clientCompliance, clientAccess, primaryAddress] = await Promise.all([
+        db.insert(clientPreferences).values({
+          id: createId(),
+          communicationFrequency: 'monthly',
+          reportingPreferences: [],
+          marketingConsent: false,
+          languagePreference: 'en-US',
+        }).returning(),
+        db.insert(compliance).values({
+          id: createId(),
+          kycStatus: data.compliance.kycStatus,
+          restrictions: [],
+        }).returning(),
+        db.insert(access).values({
+          id: createId(),
+          canView: true,
+          canEdit: false,
+          canDelete: false,
+          canInvite: false,
+          grantAccess: false,
+          reportAccess: false,
+          documentAccess: false,
+          role: 'client',
+        }).returning(),
+        db.insert(addresses).values({
+          id: createId(),
+          ...data.contactInfo.primaryAddress,
+          type: data.contactInfo.primaryAddress.type || 'home',
+        }).returning(),
       ]);
 
       // Create the client with all required relations
-      const newClient = await prisma.client.create({
-        data: {
-          status: client.status,
-          firstName: client.firstName,
-          lastName: client.lastName,
-          email: client.email,
-          phone: client.phone,
-          dateOfBirth: client.dateOfBirth,
-          preferredName: client.preferredName,
-          preferredPronouns: client.preferredPronouns,
-          advisorId: client.advisorId,
-          relationshipStartDate: client.relationshipStartDate,
-          firmClientId: client.firmClientId,
-          secondaryAdvisors: client.secondaryAdvisors,
-          relationshipManager: client.relationshipManager,
-          causeAreas: client.causeAreas,
-          preferredContactMethod: client.preferredContactMethod,
-          primaryAddressId: primaryAddress.id,
-          preferencesId: preferences.id,
-          complianceId: compliance.id,
-          accessId: access.id,
-        },
-        include: {
-          primaryAddress: true,
-          preferences: true,
-          compliance: true,
-          access: true,
-        },
-      });
+      const [client] = await db.insert(clients).values({
+        id: createId(),
+        status: 'PENDING',
+        firstName: data.basicInfo.firstName,
+        lastName: data.basicInfo.lastName,
+        email: data.basicInfo.email,
+        preferredContactMethod: data.contactInfo.preferredContactMethod,
+        advisorId: data.relationshipInfo.advisorId,
+        relationshipStartDate: data.relationshipInfo.relationshipStartDate,
+        causeAreas: data.philanthropicProfile.causeAreas,
+        secondaryAdvisors: [],
+        primaryAddressId: primaryAddress[0].id,
+        preferencesId: preferences[0].id,
+        complianceId: clientCompliance[0].id,
+        accessId: clientAccess[0].id,
+      }).returning();
 
-      return this.transformClientToProfile(newClient);
+      return this.getClientById(client.id);
     } catch (error) {
       console.error('Error creating client:', error);
       throw error;
     }
   },
 
-  async updateClient(id: string, updates: Partial<Omit<Client, 'id' | 'createdAt' | 'updatedAt'>>) {
+  async updateClient(id: string, updates: Partial<Client>) {
     try {
-      const client = await prisma.client.update({
-        where: { id },
-        data: updates,
-        include: {
-          primaryAddress: true,
-          alternateAddress: true,
-          preferences: true,
-          compliance: true,
-          access: true,
-          dafs: true,
-          givingGoals: true,
-          grantPreferences: true,
-          familyInfo: {
-            include: {
-              familyMembers: true,
-              successorPlans: true,
-            },
-          },
-          documents: {
-            include: {
-              documents: true,
-            },
-          },
-          otherAccounts: true,
-        },
-      });
+      const [updatedClient] = await db
+        .update(clients)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(clients.id, id))
+        .returning();
 
-      return this.transformClientToProfile(client);
+      if (!updatedClient) {
+        throw new Error('Client not found');
+      }
+
+      return this.getClientById(updatedClient.id);
     } catch (error) {
       console.error('Error updating client:', error);
       throw error;
@@ -207,240 +175,85 @@ export const clientService = {
 
   async deleteClient(id: string) {
     try {
-      return await prisma.$transaction(async (tx) => {
-        const client = await tx.client.findUnique({
-          where: { id },
-          include: {
-            primaryAddress: true,
-            alternateAddress: true,
-            preferences: true,
-            compliance: true,
-            access: true,
-            documents: {
-              include: {
-                documents: true,
-              },
-            },
-            familyInfo: {
-              include: {
-                familyMembers: true,
-                successorPlans: true,
-              },
-            },
-            givingGoals: true,
-            grantPreferences: true,
-            dafs: true,
-            otherAccounts: true,
-            invitations: true,
-          },
-        });
+      // Get the raw client data first
+      const [client] = await db
+        .select()
+        .from(clients)
+        .where(eq(clients.id, id))
+        .limit(1);
 
-        if (!client) {
-          throw new Error('Client not found');
-        }
+      if (!client) {
+        throw new Error('Client not found');
+      }
 
-        // Delete related records in the correct order
-        if (client.invitations.length > 0) {
-          await tx.clientAccessInvitation.deleteMany({
-            where: { clientId: id },
-          });
-        }
+      // Delete related records in the correct order
+      await Promise.all([
+        client.documentsId && db.delete(documents).where(eq(documents.id, client.documentsId)),
+        client.familyInfoId && db.delete(familyInfo).where(eq(familyInfo.id, client.familyInfoId)),
+        db.delete(dafAccounts).where(eq(dafAccounts.clientId, id)),
+        db.delete(otherGivingAccounts).where(eq(otherGivingAccounts.clientId, id)),
+      ]);
 
-        if (client.dafs.length > 0) {
-          await tx.dAFAccount.deleteMany({
-            where: { clientId: id },
-          });
-        }
+      await Promise.all([
+        db.delete(addresses).where(eq(addresses.id, client.primaryAddressId)),
+        client.alternateAddressId && db.delete(addresses).where(eq(addresses.id, client.alternateAddressId)),
+        db.delete(clientPreferences).where(eq(clientPreferences.id, client.preferencesId)),
+        db.delete(compliance).where(eq(compliance.id, client.complianceId)),
+        db.delete(access).where(eq(access.id, client.accessId)),
+      ]);
 
-        if (client.otherAccounts.length > 0) {
-          await tx.otherGivingAccount.deleteMany({
-            where: { clientId: id },
-          });
-        }
+      await db.delete(clients).where(eq(clients.id, id));
 
-        if (client.documents) {
-          if (client.documents.documents.length > 0) {
-            await tx.document.deleteMany({
-              where: { documentsId: client.documents.id },
-            });
-          }
-          await tx.documents.delete({
-            where: { id: client.documents.id },
-          });
-        }
-
-        if (client.familyInfo) {
-          if (client.familyInfo.familyMembers.length > 0) {
-            await tx.familyMember.deleteMany({
-              where: { familyInfoId: client.familyInfo.id },
-            });
-          }
-          if (client.familyInfo.successorPlans.length > 0) {
-            await tx.successorPlan.deleteMany({
-              where: { familyInfoId: client.familyInfo.id },
-            });
-          }
-          await tx.familyInfo.delete({
-            where: { id: client.familyInfo.id },
-          });
-        }
-
-        if (client.givingGoals) {
-          await tx.givingGoals.delete({
-            where: { id: client.givingGoals.id },
-          });
-        }
-
-        if (client.grantPreferences) {
-          await tx.grantPreferences.delete({
-            where: { id: client.grantPreferences.id },
-          });
-        }
-
-        if (client.primaryAddress) {
-          await tx.address.delete({
-            where: { id: client.primaryAddress.id },
-          });
-        }
-
-        if (client.alternateAddress) {
-          await tx.address.delete({
-            where: { id: client.alternateAddress.id },
-          });
-        }
-
-        await tx.clientPreferences.delete({
-          where: { id: client.preferences.id },
-        });
-
-        await tx.compliance.delete({
-          where: { id: client.compliance.id },
-        });
-
-        await tx.access.delete({
-          where: { id: client.access.id },
-        });
-
-        await tx.client.delete({
-          where: { id },
-        });
-
-        return client;
-      });
+      // Return the transformed profile for consistency
+      return this.transformClientToProfile(client);
     } catch (error) {
       console.error('Error deleting client:', error);
       throw error;
     }
   },
 
-  async createClientProfile(data: MinimumClientCreation): Promise<ClientProfile> {
-    try {
-      // Create the required related records in parallel
-      const [preferences, compliance, access] = await Promise.all([
-        prisma.clientPreferences.create({
-          data: {
-            communicationFrequency: 'monthly',
-            reportingPreferences: [],
-            marketingConsent: false,
-            languagePreference: 'en-US',
-          },
-        }),
-        prisma.compliance.create({
-          data: {
-            kycStatus: data.compliance.kycStatus,
-            restrictions: [],
-          },
-        }),
-        prisma.access.create({
-          data: {
-            canView: true,
-            canEdit: false,
-            canDelete: false,
-            canInvite: false,
-            grantAccess: false,
-            reportAccess: false,
-            documentAccess: false,
-            role: 'client',
-          },
-        }),
-      ]);
-
-      // Create the primary address
-      const primaryAddress = await prisma.address.create({
-        data: {
-          ...data.contactInfo.primaryAddress,
-          type: data.contactInfo.primaryAddress.type || 'home',
-        },
-      });
-
-      // Create the client with all relations
-      const client = await prisma.client.create({
-        data: {
-          status: 'PENDING',
-          firstName: data.basicInfo.firstName,
-          lastName: data.basicInfo.lastName,
-          email: data.basicInfo.email,
-          preferredContactMethod: data.contactInfo.preferredContactMethod,
-          advisorId: data.relationshipInfo.advisorId,
-          relationshipStartDate: data.relationshipInfo.relationshipStartDate,
-          causeAreas: data.philanthropicProfile.causeAreas,
-          secondaryAdvisors: [],
-          primaryAddressId: primaryAddress.id,
-          preferencesId: preferences.id,
-          complianceId: compliance.id,
-          accessId: access.id,
-        },
-        include: {
-          primaryAddress: true,
-          alternateAddress: true,
-          preferences: true,
-          compliance: true,
-          access: true,
-          dafs: true,
-          givingGoals: true,
-          grantPreferences: true,
-          familyInfo: {
-            include: {
-              familyMembers: true,
-              successorPlans: true,
-            },
-          },
-          documents: {
-            include: {
-              documents: true,
-            },
-          },
-          otherAccounts: true,
-        },
-      });
-
-      return this.transformClientToProfile(client);
-    } catch (error) {
-      console.error('Error creating client profile:', error);
-      throw error;
-    }
-  },
-
-  transformDocument(doc: Document): Document {
+  // Transform methods
+  transformDocument(doc: any): Document {
     return {
       id: doc.id,
-      type: doc.type,
+      type: doc.type as 'AGREEMENT' | 'TAX' | 'GRANT_LETTER' | 'CORRESPONDENCE',
       name: doc.name,
       url: doc.url,
       uploadedAt: doc.uploadedAt,
     };
   },
 
-  transformAddress(dbAddress: any): Address {
-    return {
+  transformAddress(dbAddress: any): {
+    street1: string;
+    street2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    type: 'home' | 'business' | 'mailing';
+  } {
+    const address: {
+      street1: string;
+      street2?: string;
+      city: string;
+      state: string;
+      postalCode: string;
+      country: string;
+      type: 'home' | 'business' | 'mailing';
+    } = {
       street1: dbAddress.street1,
-      street2: dbAddress.street2 || undefined,
       city: dbAddress.city,
       state: dbAddress.state,
       postalCode: dbAddress.postalCode,
       country: dbAddress.country,
-      type: dbAddress.type,
+      type: dbAddress.type as 'home' | 'business' | 'mailing',
     };
+
+    if (dbAddress.street2) {
+      address.street2 = dbAddress.street2;
+    }
+
+    return address;
   },
 
   transformClientToProfile(dbClient: any): ClientProfile {
@@ -455,7 +268,7 @@ export const clientService = {
 
     return {
       id: dbClient.id,
-      status: dbClient.status.toLowerCase() as ClientStatus,
+      status: dbClient.status.toLowerCase(),
       createdAt: dbClient.createdAt,
       updatedAt: dbClient.updatedAt,
       basicInfo: {
@@ -497,13 +310,13 @@ export const clientService = {
         dafs: dbClient.dafs || [],
         otherAccounts: (dbClient.otherAccounts || []).map((account: any) => ({
           ...account,
-          type: account.type as GivingVehicle,
+          type: account.type,
           institution: account.institution || undefined,
         })),
       },
       preferences: {
-        communicationFrequency: dbClient.preferences.communicationFrequency as 'weekly' | 'monthly' | 'quarterly',
-        reportingPreferences: dbClient.preferences.reportingPreferences as ReportType[],
+        communicationFrequency: dbClient.preferences.communicationFrequency,
+        reportingPreferences: dbClient.preferences.reportingPreferences,
         marketingConsent: dbClient.preferences.marketingConsent,
         languagePreference: dbClient.preferences.languagePreference,
       },
@@ -523,7 +336,7 @@ export const clientService = {
       } : undefined,
       documents: dbClient.documents ? documentGroups : undefined,
       compliance: {
-        kycStatus: dbClient.compliance.kycStatus as 'pending' | 'approved' | 'rejected',
+        kycStatus: dbClient.compliance.kycStatus,
         kycDate: dbClient.compliance.kycDate || undefined,
         riskRating: dbClient.compliance.riskRating || undefined,
         restrictions: dbClient.compliance.restrictions,
@@ -537,17 +350,17 @@ export const clientService = {
     };
   },
 
-  transformDocuments(documents: Document[]): {
-    agreements: Document[];
-    taxDocuments: Document[];
-    grantLetters: Document[];
-    correspondence: Document[];
-  } {
-    const result = {
-      agreements: [] as Document[],
-      taxDocuments: [] as Document[],
-      grantLetters: [] as Document[],
-      correspondence: [] as Document[],
+  transformDocuments(documents: any[]) {
+    const result: {
+      agreements: Document[];
+      taxDocuments: Document[];
+      grantLetters: Document[];
+      correspondence: Document[];
+    } = {
+      agreements: [],
+      taxDocuments: [],
+      grantLetters: [],
+      correspondence: [],
     };
 
     documents.forEach(doc => {
@@ -569,105 +382,5 @@ export const clientService = {
     });
 
     return result;
-  },
-
-  async getClient(id: string) {
-    const client = await prisma.client.findUnique({
-      where: { id },
-      include: {
-        primaryAddress: true,
-        alternateAddress: true,
-        preferences: true,
-        compliance: true,
-        access: true,
-        dafs: true,
-        givingGoals: true,
-        grantPreferences: true,
-        familyInfo: {
-          include: {
-            familyMembers: true,
-            successorPlans: true,
-          },
-        },
-        documents: {
-          include: {
-            documents: true,
-          },
-        },
-        otherAccounts: true,
-      },
-    });
-    return client ? this.transformClientToProfile(client) : null;
-  },
-
-  async getAllClients() {
-    const clients = await prisma.client.findMany({
-      include: {
-        primaryAddress: true,
-        alternateAddress: true,
-        preferences: true,
-        compliance: true,
-        access: true,
-        dafs: true,
-        givingGoals: true,
-        grantPreferences: true,
-        familyInfo: {
-          include: {
-            familyMembers: true,
-            successorPlans: true,
-          },
-        },
-        documents: {
-          include: {
-            documents: true,
-          },
-        },
-        otherAccounts: true,
-      },
-    });
-    return clients.map(client => this.transformClientToProfile(client));
-  },
-
-  async archiveClient(id: string) {
-    try {
-      const client = await prisma.client.update({
-        where: { id },
-        data: {
-          status: 'ARCHIVED',
-          updatedAt: new Date(),
-        },
-        include: {
-          primaryAddress: true,
-          alternateAddress: true,
-          preferences: true,
-          compliance: true,
-          access: true,
-          dafs: true,
-          givingGoals: true,
-          grantPreferences: true,
-          familyInfo: {
-            include: {
-              familyMembers: true,
-              successorPlans: true,
-            },
-          },
-          documents: {
-            include: {
-              documents: true,
-            },
-          },
-          otherAccounts: true,
-        },
-      });
-
-      if (!client) {
-        throw new Error('Client not found');
-      }
-
-      return this.transformClientToProfile(client);
-    } catch (error) {
-      console.error('Error archiving client:', error);
-      throw error;
-    }
   },
 }; 

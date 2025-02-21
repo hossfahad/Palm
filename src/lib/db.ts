@@ -1,9 +1,14 @@
-import { PrismaClient } from '@prisma/client';
+'use server';
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClient | undefined;
-};
+import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool } from 'pg';
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+if (!process.env.DATABASE_URL) {
+  throw new Error('DATABASE_URL is not defined');
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma; 
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+export const db = drizzle(pool); 
