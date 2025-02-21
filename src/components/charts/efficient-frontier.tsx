@@ -83,7 +83,7 @@ export function EfficientFrontier({
         <div style={{ width: '100%', height }}>
           <ResponsiveContainer>
             <ScatterChart
-              margin={{ top: 20, right: 30, bottom: 60, left: 60 }}
+              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.gray[2]} />
               <XAxis
@@ -92,13 +92,7 @@ export function EfficientFrontier({
                 name="Risk"
                 domain={domain.x}
                 tickFormatter={value => formatPercentage(value)}
-                label={{ 
-                  value: 'Risk (Standard Deviation)', 
-                  position: 'bottom', 
-                  offset: 40,
-                  style: { textAnchor: 'middle' }
-                }}
-                tick={{ dy: 10 }}
+                label={{ value: 'Risk (Standard Deviation)', position: 'bottom' }}
               />
               <YAxis
                 type="number"
@@ -106,14 +100,7 @@ export function EfficientFrontier({
                 name="Return"
                 domain={domain.y}
                 tickFormatter={value => formatPercentage(value)}
-                label={{ 
-                  value: 'Expected Return', 
-                  angle: -90, 
-                  position: 'left',
-                  offset: 40,
-                  style: { textAnchor: 'middle' }
-                }}
-                tick={{ dx: -10 }}
+                label={{ value: 'Expected Return', angle: -90, position: 'left' }}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
