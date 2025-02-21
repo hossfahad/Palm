@@ -14,39 +14,24 @@ import {
 } from '@mantine/core';
 import { IconDotsVertical, IconUserPlus } from '@tabler/icons-react';
 import { formatDate } from '@/lib/utils/format';
-import { UserRole, UserStatus } from '@/lib/services/user-service';
-
-interface FamilyMember {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  profileImage?: string;
-  lastActivity?: Date;
-  isHeadOfFamily: boolean;
-}
+import type { FamilyMember } from '@/hooks/use-family-members';
 
 interface FamilyMemberListProps {
   members: FamilyMember[];
   onInviteMember: () => void;
-  onUpdateRole: (memberId: string, role: UserRole) => void;
+  onUpdateRole: (memberId: string, role: 'FAMILY_MEMBER' | 'CLIENT') => void;
   onRemoveMember: (memberId: string) => void;
 }
 
-const roleColors: Record<UserRole, string> = {
+const roleColors: Record<string, string> = {
   FAMILY_MEMBER: 'blue',
   CLIENT: 'green',
-  ADVISOR: 'grape',
-  SYSTEM_ADMIN: 'red',
 };
 
-const statusColors: Record<UserStatus, string> = {
+const statusColors: Record<string, string> = {
   ACTIVE: 'green',
   PENDING: 'yellow',
   INACTIVE: 'gray',
-  SUSPENDED: 'red',
 };
 
 export function FamilyMemberList({
@@ -142,13 +127,13 @@ export function FamilyMemberList({
                     <Menu.Dropdown>
                       <Menu.Item
                         onClick={() =>
-                          onUpdateRole(member.id, UserRole.FAMILY_MEMBER)
+                          onUpdateRole(member.id, 'FAMILY_MEMBER')
                         }
                       >
                         Set as Family Member
                       </Menu.Item>
                       <Menu.Item
-                        onClick={() => onUpdateRole(member.id, UserRole.CLIENT)}
+                        onClick={() => onUpdateRole(member.id, 'CLIENT')}
                       >
                         Set as Client
                       </Menu.Item>
