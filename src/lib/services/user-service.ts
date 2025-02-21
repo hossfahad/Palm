@@ -1,24 +1,21 @@
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { db } from '@/lib/db';
-import { users, familyInvitations } from '@/lib/schema';
-import type { User, FamilyInvitation } from '@/lib/schema';
+import { users, familyInvitations, userRoles, userStatuses, invitationStatuses } from '@/lib/schema';
+
+export type UserRole = (typeof userRoles)[number];
+export type UserStatus = (typeof userStatuses)[number];
+export type InvitationStatus = (typeof invitationStatuses)[number];
 
 export const UserRole = {
-  SYSTEM_ADMIN: 'SYSTEM_ADMIN',
-  ADVISOR: 'ADVISOR',
-  CLIENT: 'CLIENT',
-  FAMILY_MEMBER: 'FAMILY_MEMBER',
+  FAMILY_MEMBER: 'FAMILY_MEMBER' as UserRole,
+  CLIENT: 'CLIENT' as UserRole,
 } as const;
 
 export const UserStatus = {
-  ACTIVE: 'ACTIVE',
-  PENDING: 'PENDING',
-  INACTIVE: 'INACTIVE',
-  SUSPENDED: 'SUSPENDED',
+  ACTIVE: 'ACTIVE' as UserStatus,
+  PENDING: 'PENDING' as UserStatus,
+  INACTIVE: 'INACTIVE' as UserStatus,
 } as const;
-
-export type UserRole = typeof UserRole[keyof typeof UserRole];
-export type UserStatus = typeof UserStatus[keyof typeof UserStatus];
 
 export type CreateUserInput = {
   email: string;
@@ -38,121 +35,119 @@ export type UpdateUserInput = Partial<{
   isHeadOfFamily: boolean;
 }>;
 
-export interface FamilyInvitationInput {
+export type FamilyInvitationInput = {
   email: string;
   firstName: string;
   lastName: string;
   role: UserRole;
   familyId: string;
   invitedBy: string;
+};
+
+export async function createUser(input: CreateUserInput) {
+  const [user] = await db.insert(users).values({
+    email: input.email,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    role: input.role,
+    familyId: input.familyId!,
+    isHeadOfFamily: input.isHeadOfFamily || false,
+    status: UserStatus.PENDING,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }).returning();
+
+  return user;
 }
 
-export class UserService {
-  static async createUser(input: CreateUserInput): Promise<User> {
-    const [user] = await db.insert(users).values({
-      email: input.email,
-      firstName: input.firstName,
-      lastName: input.lastName,
-      role: input.role,
-      familyId: input.familyId,
-      isHeadOfFamily: input.isHeadOfFamily || false,
-      status: UserStatus.PENDING,
-      createdAt: new Date(),
+export async function updateUser(id: string, input: UpdateUserInput) {
+  const [user] = await db.update(users)
+    .set({
+      ...input,
       updatedAt: new Date(),
-    }).returning();
+    })
+    .where(eq(users.id, id))
+    .returning();
 
-    return user;
+  return user;
+}
+
+export async function getUserById(id: string) {
+  const [user] = await db.select()
+    .from(users)
+    .where(eq(users.id, id))
+    .limit(1);
+
+  return user || null;
+}
+
+export async function getUserByEmail(email: string) {
+  const [user] = await db.select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+
+  return user || null;
+}
+
+export async function getFamilyMembers(familyId: string) {
+  return db.select()
+    .from(users)
+    .where(eq(users.familyId, familyId))
+    .orderBy(desc(users.isHeadOfFamily), users.firstName);
+}
+
+export async function createFamilyInvitation(input: FamilyInvitationInput) {
+  const [invitation] = await db.insert(familyInvitations).values({
+    email: input.email,
+    role: input.role,
+    status: 'pending' as InvitationStatus,
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    familyId: input.familyId,
+    invitedBy: input.invitedBy,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }).returning();
+
+  return invitation;
+}
+
+export async function acceptFamilyInvitation(invitationId: string, userId: string) {
+  const [invitation] = await db.select()
+    .from(familyInvitations)
+    .where(eq(familyInvitations.id, invitationId))
+    .limit(1);
+
+  if (!invitation) {
+    throw new Error('Invitation not found');
   }
 
-  static async updateUser(id: string, input: UpdateUserInput): Promise<User> {
-    const [user] = await db.update(users)
-      .set({
-        ...input,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, id))
-      .returning();
-
-    return user;
+  if (invitation.status !== 'pending') {
+    throw new Error('Invitation is no longer valid');
   }
 
-  static async getUserById(id: string): Promise<User | null> {
-    const [user] = await db.select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
-
-    return user || null;
+  if (invitation.expiresAt < new Date()) {
+    throw new Error('Invitation has expired');
   }
 
-  static async getUserByEmail(email: string): Promise<User | null> {
-    const [user] = await db.select()
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
-
-    return user || null;
-  }
-
-  static async getFamilyMembers(familyId: string): Promise<User[]> {
-    return db.select()
-      .from(users)
-      .where(eq(users.familyId, familyId))
-      .orderBy(desc(users.isHeadOfFamily), users.firstName);
-  }
-
-  static async createFamilyInvitation(input: FamilyInvitationInput): Promise<FamilyInvitation> {
-    const [invitation] = await db.insert(familyInvitations).values({
-      email: input.email,
-      role: input.role,
-      status: 'pending',
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-      familyId: input.familyId,
-      invitedBy: input.invitedBy,
-      createdAt: new Date(),
+  // Update the invitation status
+  await db.update(familyInvitations)
+    .set({ 
+      status: 'accepted' as InvitationStatus,
       updatedAt: new Date(),
-    }).returning();
+    })
+    .where(eq(familyInvitations.id, invitationId));
 
-    return invitation;
-  }
+  // Update the user's family membership
+  const [updatedUser] = await db.update(users)
+    .set({
+      familyId: invitation.familyId,
+      role: invitation.role,
+      status: UserStatus.ACTIVE,
+      updatedAt: new Date(),
+    })
+    .where(eq(users.id, userId))
+    .returning();
 
-  static async acceptFamilyInvitation(invitationId: string, userId: string): Promise<User> {
-    const [invitation] = await db.select()
-      .from(familyInvitations)
-      .where(eq(familyInvitations.id, invitationId))
-      .limit(1);
-
-    if (!invitation) {
-      throw new Error('Invitation not found');
-    }
-
-    if (invitation.status !== 'pending') {
-      throw new Error('Invitation is no longer valid');
-    }
-
-    if (invitation.expiresAt < new Date()) {
-      throw new Error('Invitation has expired');
-    }
-
-    // Update the invitation status
-    await db.update(familyInvitations)
-      .set({ 
-        status: 'accepted',
-        updatedAt: new Date(),
-      })
-      .where(eq(familyInvitations.id, invitationId));
-
-    // Update the user's family membership
-    const [updatedUser] = await db.update(users)
-      .set({
-        familyId: invitation.familyId,
-        role: invitation.role,
-        status: UserStatus.ACTIVE,
-        updatedAt: new Date(),
-      })
-      .where(eq(users.id, userId))
-      .returning();
-
-    return updatedUser;
-  }
+  return updatedUser;
 } 

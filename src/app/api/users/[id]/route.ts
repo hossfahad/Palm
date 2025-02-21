@@ -1,5 +1,6 @@
+import { getUserById, updateUser } from '@/lib/services/user-service';
+import type { UpdateUserInput } from '@/lib/services/user-service';
 import { NextResponse } from 'next/server';
-import { UserService, UpdateUserInput } from '@/lib/services/user-service';
 import { createClient } from '@/lib/supabase/server';
 
 interface RouteParams {
@@ -21,7 +22,7 @@ export async function GET(request: Request, { params }: RouteParams) {
       );
     }
 
-    const user = await UserService.getUserById(params.id);
+    const user = await getUserById(params.id);
     if (!user) {
       return NextResponse.json(
         { error: 'User not found' },
@@ -53,7 +54,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
     }
 
     const input = await request.json() as UpdateUserInput;
-    const user = await UserService.updateUser(params.id, input);
+    const user = await updateUser(params.id, input);
 
     return NextResponse.json(user);
   } catch (error: any) {
@@ -79,8 +80,8 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     }
 
     // Instead of actually deleting, we'll mark the user as inactive
-    const user = await UserService.updateUser(params.id, {
-      status: 'INACTIVE' as any,
+    const user = await updateUser(params.id, {
+      status: 'INACTIVE',
     });
 
     return NextResponse.json(user);

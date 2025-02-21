@@ -1,13 +1,15 @@
 'use server';
 
-import { prisma } from '@/lib/db';
-import type { Client } from '@prisma/client';
+import { db } from '@/lib/db';
+import { clients, userStatuses } from '@/lib/schema';
+import { eq } from 'drizzle-orm';
+import type { UserStatus } from './user-service';
 
 export type CreateClientInput = {
   firstName: string;
   lastName: string;
   email: string;
-  status: string;
+  status: UserStatus;
   advisorId: string;
   preferredContactMethod: string;
   relationshipStartDate: string;
@@ -15,11 +17,13 @@ export type CreateClientInput = {
   causeAreas: string[];
 };
 
+export type UpdateClientInput = Omit<Partial<CreateClientInput>, 'relationshipStartDate'> & {
+  relationshipStartDate?: string;
+};
+
 export async function getClients() {
   try {
-    return await prisma.client.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+    return await db.select().from(clients).orderBy(clients.createdAt);
   } catch (error) {
     console.error('Error fetching clients:', error);
     throw new Error('Failed to fetch clients');
@@ -28,9 +32,11 @@ export async function getClients() {
 
 export async function getClientById(id: string) {
   try {
-    const client = await prisma.client.findUnique({
-      where: { id },
-    });
+    const [client] = await db
+      .select()
+      .from(clients)
+      .where(eq(clients.id, id))
+      .limit(1);
 
     if (!client) {
       throw new Error('Client not found');
@@ -43,10 +49,11 @@ export async function getClientById(id: string) {
   }
 }
 
-export async function createClient(data: CreateClientInput): Promise<Client> {
+export async function createClient(data: CreateClientInput) {
   try {
-    return await prisma.client.create({
-      data: {
+    const [client] = await db
+      .insert(clients)
+      .values({
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
@@ -56,31 +63,47 @@ export async function createClient(data: CreateClientInput): Promise<Client> {
         relationshipStartDate: new Date(data.relationshipStartDate),
         secondaryAdvisors: data.secondaryAdvisors,
         causeAreas: data.causeAreas,
-      },
-    });
+      })
+      .returning();
+
+    return client;
   } catch (error) {
     console.error('Error creating client:', error);
     throw error;
   }
 }
 
-export async function updateClient(id: string, data: Partial<CreateClientInput>): Promise<Client> {
+export async function updateClient(id: string, data: UpdateClientInput) {
   try {
-    return await prisma.client.update({
-      where: { id },
-      data,
-    });
+    const { relationshipStartDate, ...rest } = data;
+    
+    const [client] = await db
+      .update(clients)
+      .set({
+        ...rest,
+        ...(relationshipStartDate && {
+          relationshipStartDate: new Date(relationshipStartDate),
+        }),
+        updatedAt: new Date(),
+      })
+      .where(eq(clients.id, id))
+      .returning();
+
+    return client;
   } catch (error) {
     console.error('Error updating client:', error);
     throw error;
   }
 }
 
-export async function deleteClient(id: string): Promise<Client> {
+export async function deleteClient(id: string) {
   try {
-    return await prisma.client.delete({
-      where: { id },
-    });
+    const [client] = await db
+      .delete(clients)
+      .where(eq(clients.id, id))
+      .returning();
+
+    return client;
   } catch (error) {
     console.error('Error deleting client:', error);
     throw error;

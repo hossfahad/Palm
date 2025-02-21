@@ -1,7 +1,8 @@
 'use server';
 
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { getFamilyMembers, updateUser } from '@/lib/services/user-service';
+import type { UserRole } from '@/lib/services/user-service';
 
 interface RouteParams {
   params: {
@@ -11,16 +12,7 @@ interface RouteParams {
 
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    const members = await prisma.user.findMany({
-      where: {
-        familyId: params.familyId,
-      },
-      orderBy: [
-        { isHeadOfFamily: 'desc' },
-        { firstName: 'asc' },
-      ],
-    });
-
+    const members = await getFamilyMembers(params.familyId);
     return NextResponse.json(members);
   } catch (error) {
     console.error('Error fetching family members:', error);
@@ -35,9 +27,8 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     const { memberId, role } = await request.json();
 
-    const member = await prisma.user.update({
-      where: { id: memberId },
-      data: { role },
+    const member = await updateUser(memberId, {
+      role: role as UserRole,
     });
 
     return NextResponse.json(member);
@@ -54,9 +45,8 @@ export async function DELETE(request: Request, { params }: RouteParams) {
   try {
     const { memberId } = await request.json();
 
-    const member = await prisma.user.update({
-      where: { id: memberId },
-      data: { status: 'INACTIVE' },
+    const member = await updateUser(memberId, {
+      status: 'INACTIVE',
     });
 
     return NextResponse.json(member);

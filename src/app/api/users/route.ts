@@ -1,5 +1,6 @@
+import { createUser, getUserByEmail, getFamilyMembers } from '@/lib/services/user-service';
+import type { CreateUserInput } from '@/lib/services/user-service';
 import { NextResponse } from 'next/server';
-import { UserService, CreateUserInput, UpdateUserInput } from '@/lib/services/user-service';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
     }
 
     const input = await request.json() as CreateUserInput;
-    const user = await UserService.createUser(input);
+    const user = await createUser(input);
 
     return NextResponse.json(user);
   } catch (error: any) {
@@ -47,9 +48,9 @@ export async function GET(request: Request) {
 
     let users;
     if (email) {
-      users = await UserService.getUserByEmail(email);
+      users = await getUserByEmail(email);
     } else if (familyId) {
-      users = await UserService.getFamilyMembers(familyId);
+      users = await getFamilyMembers(familyId);
     } else {
       return NextResponse.json(
         { error: 'Missing required parameters' },

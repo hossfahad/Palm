@@ -1,5 +1,5 @@
+import { createFamilyInvitation, acceptFamilyInvitation } from '@/lib/services/user-service';
 import { NextResponse } from 'next/server';
-import { UserService } from '@/lib/services/user-service';
 import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     const input = await request.json();
-    const invitation = await UserService.createFamilyInvitation({
+    const invitation = await createFamilyInvitation({
       ...input,
       invitedBy: session.user.id,
     });
@@ -47,7 +47,7 @@ export async function PATCH(request: Request) {
     }
 
     const { invitationId } = await request.json();
-    const invitation = await UserService.acceptFamilyInvitation(
+    const invitation = await acceptFamilyInvitation(
       invitationId,
       session.user.id
     );

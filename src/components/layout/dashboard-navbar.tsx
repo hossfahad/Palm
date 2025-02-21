@@ -6,6 +6,7 @@ import {
   IconBuildingStore,
   IconSettings,
   IconUsers,
+  IconLock,
 } from '@tabler/icons-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -29,6 +30,12 @@ export function DashboardNavbar() {
       icon: IconUsers, 
       label: 'Clients', 
       href: '/dashboard/manage/clients',
+      exact: false,
+    },
+    { 
+      icon: IconLock, 
+      label: 'Access', 
+      href: '/dashboard/access',
       exact: false,
     },
     { 
