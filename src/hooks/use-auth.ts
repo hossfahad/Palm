@@ -7,6 +7,7 @@ export type UserRole = 'advisor' | 'client';
 interface UseAuthReturn {
   user: any | null;
   role: UserRole;
+  userId: string | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
 }
@@ -14,6 +15,7 @@ interface UseAuthReturn {
 export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<any | null>(null);
   const [role, setRole] = useState<UserRole>('client');
+  const [userId, setUserId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -28,14 +30,15 @@ export function useAuth(): UseAuthReturn {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           setUser(user);
-          // Get user role from profiles
+          // Get user role and ID from profiles
           const { data: profile } = await supabase
             .from('user_profiles')
-            .select('role')
+            .select('role, id')
             .eq('user_id', user.id)
             .single();
           
           setRole(profile?.role as UserRole || 'client');
+          setUserId(profile?.id || null);
         }
       } catch (error) {
         console.error('Error getting user:', error);
@@ -52,14 +55,16 @@ export function useAuth(): UseAuthReturn {
           setUser(session.user);
           const { data: profile } = await supabase
             .from('user_profiles')
-            .select('role')
+            .select('role, id')
             .eq('user_id', session.user.id)
             .single();
           
           setRole(profile?.role as UserRole || 'client');
+          setUserId(profile?.id || null);
         } else {
           setUser(null);
           setRole('client');
+          setUserId(null);
         }
         setIsLoading(false);
       }
@@ -78,6 +83,7 @@ export function useAuth(): UseAuthReturn {
   return {
     user,
     role,
+    userId,
     isLoading,
     signOut,
   };
