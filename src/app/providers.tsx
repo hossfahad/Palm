@@ -20,8 +20,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MantineProvider>
-        <Notifications />
+      <MantineProvider
+        defaultColorScheme="light"
+        theme={{
+          primaryColor: 'blue',
+          fontFamily: 'Inter, sans-serif',
+          components: {
+            Button: {
+              defaultProps: {
+                size: 'md',
+              },
+            },
+          },
+        }}
+      >
+        <Notifications position="top-right" />
         <AuthProvider>
           <UserProvider>
             {children}

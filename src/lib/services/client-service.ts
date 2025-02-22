@@ -1,111 +1,168 @@
 'use server';
 
-import { db } from '@/lib/db';
-import { clients, userStatuses } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
-import type { UserStatus } from './user-service';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
+import { User, UserProfile } from '../db/schema';
 
-export type CreateClientInput = {
-  firstName: string;
-  lastName: string;
+interface CreateClientData extends Partial<UserProfile> {
   email: string;
-  status: UserStatus;
-  advisorId: string;
-  preferredContactMethod: string;
-  relationshipStartDate: string;
-  secondaryAdvisors: string[];
-  causeAreas: string[];
-};
-
-export type UpdateClientInput = Omit<Partial<CreateClientInput>, 'relationshipStartDate'> & {
-  relationshipStartDate?: string;
-};
-
-export async function getClients() {
-  try {
-    return await db.select().from(clients).orderBy(clients.createdAt);
-  } catch (error) {
-    console.error('Error fetching clients:', error);
-    throw new Error('Failed to fetch clients');
-  }
 }
 
-export async function getClientById(id: string) {
-  try {
-    const [client] = await db
+export const clientService = {
+  async getClients() {
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const { data: profiles, error } = await supabase
+      .from('user_profiles')
+      .select(`
+        *,
+        user:users(*)
+      `)
+      .eq('role', 'client');
+
+    if (error) throw error;
+    return profiles;
+  },
+
+  async getClientById(id: string) {
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const { data: profile, error } = await supabase
+      .from('user_profiles')
+      .select(`
+        *,
+        user:users(*),
+        daf_accounts(*)
+      `)
+      .eq('id', id)
+      .eq('role', 'client')
+      .single();
+
+    if (error) throw error;
+    return profile;
+  },
+
+  async createClient(data: CreateClientData) {
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    // First create the user
+    const { data: userData, error: userError } = await supabase.auth.admin.createUser({
+      email: data.email,
+      password: Math.random().toString(36).slice(-8), // Generate random password
+      email_confirm: true,
+    });
+
+    if (userError) throw userError;
+
+    // Then create the profile
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .insert({
+        ...data,
+        userId: userData.user.id,
+        role: 'client',
+      })
       .select()
-      .from(clients)
-      .where(eq(clients.id, id))
-      .limit(1);
+      .single();
 
-    if (!client) {
-      throw new Error('Client not found');
-    }
+    if (profileError) throw profileError;
+    return profile;
+  },
 
-    return client;
-  } catch (error) {
-    console.error('Error fetching client:', error);
-    throw error;
-  }
-}
+  async updateClient(id: string, data: Partial<UserProfile>) {
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
 
-export async function createClient(data: CreateClientInput) {
-  try {
-    const [client] = await db
-      .insert(clients)
-      .values({
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        status: data.status,
-        advisorId: data.advisorId,
-        preferredContactMethod: data.preferredContactMethod,
-        relationshipStartDate: new Date(data.relationshipStartDate),
-        secondaryAdvisors: data.secondaryAdvisors,
-        causeAreas: data.causeAreas,
-      })
-      .returning();
+    const { data: profile, error } = await supabase
+      .from('user_profiles')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
 
-    return client;
-  } catch (error) {
-    console.error('Error creating client:', error);
-    throw error;
-  }
-}
+    if (error) throw error;
+    return profile;
+  },
 
-export async function updateClient(id: string, data: UpdateClientInput) {
-  try {
-    const { relationshipStartDate, ...rest } = data;
-    
-    const [client] = await db
-      .update(clients)
-      .set({
-        ...rest,
-        ...(relationshipStartDate && {
-          relationshipStartDate: new Date(relationshipStartDate),
-        }),
-        updatedAt: new Date(),
-      })
-      .where(eq(clients.id, id))
-      .returning();
+  async deleteClient(id: string) {
+    const cookieStore = cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
 
-    return client;
-  } catch (error) {
-    console.error('Error updating client:', error);
-    throw error;
-  }
-}
+    // Get the user ID first
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('userId')
+      .eq('id', id)
+      .single();
 
-export async function deleteClient(id: string) {
-  try {
-    const [client] = await db
-      .delete(clients)
-      .where(eq(clients.id, id))
-      .returning();
+    if (profileError) throw profileError;
 
-    return client;
-  } catch (error) {
-    console.error('Error deleting client:', error);
-    throw error;
-  }
-} 
+    // Delete the profile
+    const { error: deleteProfileError } = await supabase
+      .from('user_profiles')
+      .delete()
+      .eq('id', id);
+
+    if (deleteProfileError) throw deleteProfileError;
+
+    // Delete the user
+    const { error: deleteUserError } = await supabase.auth.admin.deleteUser(
+      profile.userId
+    );
+
+    if (deleteUserError) throw deleteUserError;
+  },
+}; 

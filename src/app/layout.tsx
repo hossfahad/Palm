@@ -1,11 +1,16 @@
 import '@mantine/core/styles.css';
 import '@mantine/notifications/styles.css';
 import { ColorSchemeScript } from '@mantine/core';
-import { Providers } from './providers';
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Providers } from "./providers";
+import { DashboardShell } from '@/components/layout/dashboard-shell';
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: 'Palm Philanthropy',
-  description: 'Empowering charitable giving through technology',
+  title: "Palm Philanthropy",
+  description: "Empowering philanthropic giving through technology",
 };
 
 export default function RootLayout({
@@ -14,13 +19,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <ColorSchemeScript />
       </head>
-      <body>
+      <body className={inter.className}>
         <Providers>
-          {children}
+          <DashboardShell>{children}</DashboardShell>
         </Providers>
       </body>
     </html>
