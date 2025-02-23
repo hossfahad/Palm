@@ -1,6 +1,6 @@
 'use client';
 
-import { Container, Stack, Title, Grid, Group } from '@mantine/core';
+import { Stack, Title, Grid, Group } from '@mantine/core';
 import { MetricsGrid } from '@/components/dashboard/metrics-grid';
 import { ChartsSection } from '@/components/dashboard/charts-section';
 import { ActivityFeed } from '@/components/dashboard/activity-feed';
@@ -145,40 +145,48 @@ export default function DashboardPage() {
   }));
 
   return (
-    <Container size="xl" pb={0}>
-      <Stack gap="xl" className={inter.className}>
-        <ClientsHero />
-        
-        <Group justify="space-between" align="center">
-          <Title fw={400}>Dashboard</Title>
-          <ClientSelector
-            clients={formattedClients}
-            selectedClientId={selectedClientId}
-            onClientChange={setSelectedClientId}
-            onAddClient={handleAddClient}
-          />
-        </Group>
-        
-        <MetricsGrid data={metricsData} loading={false} />
-        
-        <Grid>
-          <Grid.Col span={{ base: 12, md: 8 }}>
-            <ChartsSection data={chartsData} />
-          </Grid.Col>
+    <Stack gap={0} className={inter.className}>
+      <ClientsHero />
+      
+      <div className="pl-[calc(4rem+24px)] pr-6">
+        <Stack gap="md" mt="md">
+          <Group 
+            justify="space-between" 
+            align="center" 
+            className="flex-col sm:flex-row gap-4"
+          >
+            <Title order={1} size="h2" fw={500} className="text-center sm:text-left">
+              Dashboard
+            </Title>
+            <ClientSelector
+              clients={formattedClients}
+              selectedClientId={selectedClientId}
+              onClientChange={setSelectedClientId}
+              onAddClient={handleAddClient}
+            />
+          </Group>
           
-          <Grid.Col span={{ base: 12, md: 4 }}>
-            <Stack gap="xl" pb="xl">
-              <ChatInterface
-                messages={messages}
-                isLoading={isLoading}
-                onSendMessage={handleSendMessage}
-                onReset={handleReset}
-              />
-              <ActivityFeed activities={activityData} loading={false} />
-            </Stack>
-          </Grid.Col>
-        </Grid>
-      </Stack>
-    </Container>
+          <MetricsGrid data={metricsData} loading={false} />
+          
+          <Grid gutter="md">
+            <Grid.Col span={{ base: 12, lg: 8 }}>
+              <ChartsSection data={chartsData} />
+            </Grid.Col>
+            
+            <Grid.Col span={{ base: 12, lg: 4 }}>
+              <Stack gap="md">
+                <ChatInterface
+                  messages={messages}
+                  isLoading={isLoading}
+                  onSendMessage={handleSendMessage}
+                  onReset={handleReset}
+                />
+                <ActivityFeed activities={activityData} loading={false} />
+              </Stack>
+            </Grid.Col>
+          </Grid>
+        </Stack>
+      </div>
+    </Stack>
   );
 }

@@ -7,8 +7,8 @@ IMPORTANT: Do not remove any existing components. Only add new components. Make 
 
 #### Story 1: Available to Give Indicator
 **Points**: 1
-**As a** wealth manager
-**I want** to see the available balance for granting
+**As a** wealth manager / advisor
+**I want** to input or update the available balance for granting
 **So that** I can quickly know how much can be distributed
 
 **Technical Details**:

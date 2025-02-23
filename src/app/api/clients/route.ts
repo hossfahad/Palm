@@ -1,29 +1,7 @@
 import { NextResponse } from 'next/server';
 import { clientService } from '@/lib/services/client-service';
-import { z } from 'zod';
-import { createClientSchema } from '@/lib/validations/client';
+import { clientSchema } from '@/lib/validations/client';
 import { ZodError } from 'zod';
-
-// Validation schema for creating/updating clients
-const clientSchema = z.object({
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  email: z.string().email('Invalid email address'),
-  phone: z.string().optional(),
-  dateOfBirth: z.string().datetime().optional().transform(val => val ? new Date(val) : undefined),
-  preferredName: z.string().optional(),
-  preferredPronouns: z.string().optional(),
-  advisorId: z.string().uuid('Invalid advisor ID'),
-  relationshipStartDate: z.string().datetime().transform(val => new Date(val)),
-  firmClientId: z.string().optional(),
-  secondaryAdvisors: z.array(z.string()),
-  relationshipManager: z.string().optional(),
-  causeAreas: z.array(z.string()),
-  status: z.enum(['ACTIVE', 'PENDING', 'INACTIVE', 'ARCHIVED'])
-});
-
-// Validation schema for updating clients
-const updateClientSchema = createClientSchema.partial();
 
 export async function GET(request: Request) {
   try {
@@ -55,16 +33,16 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const validatedData = createClientSchema.parse(body);
+    const validatedData = clientSchema.parse(body);
 
-    // Transform date strings to Date objects
-    const clientData = {
-      ...validatedData,
-      dateOfBirth: validatedData.dateOfBirth ? new Date(validatedData.dateOfBirth) : undefined,
-      relationshipStartDate: new Date(validatedData.relationshipStartDate),
-    };
+    const client = await clientService.createClient({
+      firstName: validatedData.firstName,
+      lastName: validatedData.lastName,
+      email: validatedData.email,
+      status: validatedData.status,
+      advisorId: validatedData.advisorId,
+    });
 
-    const client = await clientService.createClient(clientData);
     return NextResponse.json(client, { status: 201 });
   } catch (error) {
     console.error('Error creating client:', error);
@@ -96,16 +74,9 @@ export async function PUT(request: Request) {
     }
 
     const body = await request.json();
-    const validatedData = updateClientSchema.parse(body);
+    const validatedData = clientSchema.partial().parse(body);
 
-    // Transform date strings to Date objects if they exist
-    const updateData = {
-      ...validatedData,
-      dateOfBirth: validatedData.dateOfBirth ? new Date(validatedData.dateOfBirth) : undefined,
-      relationshipStartDate: validatedData.relationshipStartDate ? new Date(validatedData.relationshipStartDate) : undefined,
-    };
-
-    const updatedClient = await clientService.updateClient(id, updateData);
+    const updatedClient = await clientService.updateClient(id, validatedData);
     return NextResponse.json(updatedClient);
   } catch (error) {
     console.error('Error updating client:', error);

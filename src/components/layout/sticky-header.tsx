@@ -19,14 +19,9 @@ export function StickyHeader() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      notifications.show({
-        title: 'Success',
-        message: 'You have been signed out successfully',
-        color: 'green',
-      });
-      
-      router.push('/auth/login');
+      router.replace('/auth/login');
     } catch (error) {
+      console.error('Sign out error:', error);
       notifications.show({
         title: 'Error',
         message: error instanceof Error ? error.message : 'Failed to sign out',

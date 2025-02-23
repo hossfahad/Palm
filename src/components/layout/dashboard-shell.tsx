@@ -7,7 +7,7 @@ import { StickyHeader } from './sticky-header';
 export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <AppShell
-      padding="md"
+      padding={0}
       header={{ height: 60 }}
       navbar={{
         width: { base: 64 },
@@ -17,6 +17,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
       styles={{
         main: {
           background: 'var(--mantine-color-gray-0)',
+          paddingTop: 'var(--app-shell-header-height)',
         },
         navbar: {
           backgroundColor: 'white',

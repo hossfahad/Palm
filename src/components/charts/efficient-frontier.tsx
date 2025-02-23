@@ -12,6 +12,7 @@ import {
   Legend,
 } from 'recharts';
 import { formatPercentage } from '@/lib/utils/format';
+import { useViewportSize } from '@mantine/hooks';
 
 interface PortfolioPoint {
   risk: number;
@@ -31,7 +32,7 @@ const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     return (
-      <Paper p="xs" shadow="sm" style={{ background: 'var(--mantine-color-body)' }}>
+      <Paper p="xs" shadow="sm" className="bg-white">
         <Stack gap={4}>
           {data.allocation && (
             <Text size="sm" fw={500}>
@@ -59,7 +60,8 @@ export function EfficientFrontier({
   currentPortfolio,
 }: EfficientFrontierProps) {
   const theme = useMantineTheme();
-
+  const { width } = useViewportSize();
+  
   // Determine chart boundaries
   const allPoints = [...portfolioPoints, ...efficientFrontierPoints];
   const minRisk = Math.min(...allPoints.map(p => p.risk));
@@ -74,17 +76,21 @@ export function EfficientFrontier({
     y: [minReturn - padding, maxReturn + padding],
   };
 
+  // Responsive margins and label positioning
+  const isSmallScreen = width < 768;
+  const margins = isSmallScreen 
+    ? { top: 10, right: 10, bottom: 40, left: 40 }
+    : { top: 20, right: 30, bottom: 60, left: 60 };
+
   return (
-    <Paper p="md" radius="md" withBorder>
+    <Paper p="md" radius="md" withBorder className="w-full">
       <Stack gap="md">
         <Text fw={500} size="sm">
           {title}
         </Text>
-        <div style={{ width: '100%', height }}>
+        <div style={{ width: '100%', height: isSmallScreen ? 300 : height }}>
           <ResponsiveContainer>
-            <ScatterChart
-              margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-            >
+            <ScatterChart margin={margins}>
               <CartesianGrid strokeDasharray="3 3" stroke={theme.colors.gray[2]} />
               <XAxis
                 type="number"
@@ -92,7 +98,14 @@ export function EfficientFrontier({
                 name="Risk"
                 domain={domain.x}
                 tickFormatter={value => formatPercentage(value)}
-                label={{ value: 'Risk (Standard Deviation)', position: 'bottom' }}
+                label={{ 
+                  value: 'Risk (Standard Deviation)', 
+                  position: 'bottom',
+                  offset: isSmallScreen ? 20 : 40,
+                  style: { textAnchor: 'middle' }
+                }}
+                tick={{ fontSize: isSmallScreen ? 10 : 12 }}
+                interval="preserveStartEnd"
               />
               <YAxis
                 type="number"
@@ -100,10 +113,29 @@ export function EfficientFrontier({
                 name="Return"
                 domain={domain.y}
                 tickFormatter={value => formatPercentage(value)}
-                label={{ value: 'Expected Return', angle: -90, position: 'left' }}
+                label={{ 
+                  value: 'Expected Return',
+                  angle: -90,
+                  position: 'left',
+                  offset: isSmallScreen ? 25 : 45,
+                  style: { textAnchor: 'middle' }
+                }}
+                tick={{ fontSize: isSmallScreen ? 10 : 12 }}
+                interval="preserveStartEnd"
               />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
+              <Tooltip 
+                content={<CustomTooltip />}
+                wrapperStyle={{ zIndex: 100 }}
+              />
+              <Legend 
+                verticalAlign={isSmallScreen ? "bottom" : "top"}
+                height={36}
+                iconSize={isSmallScreen ? 8 : 10}
+                wrapperStyle={{
+                  fontSize: isSmallScreen ? 10 : 12,
+                  paddingTop: isSmallScreen ? 20 : 0
+                }}
+              />
               
               {/* Portfolio points */}
               <Scatter

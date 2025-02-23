@@ -47,6 +47,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
+      console.log('Attempting login...');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -69,13 +70,40 @@ export default function LoginPage() {
         throw new Error('No user returned from login');
       }
 
+      console.log('Auth successful, fetching user profile...');
+      // Get user profile to determine role and ID
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('role, id')
+        .eq('user_id', data.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        throw new Error('Failed to fetch user profile');
+      }
+
+      if (!profile) {
+        console.error('No profile found for user:', data.user.id);
+        throw new Error('User profile not found');
+      }
+
+      console.log('Profile found:', profile);
+      console.log('User role:', profile.role);
       notifications.show({
         title: 'Success',
         message: 'Logged in successfully',
         color: 'green',
       });
 
-      router.push(redirectTo);
+      // Redirect based on user role
+      const redirectPath = profile.role === 'advisor' 
+        ? `/advisor/${profile.id}/dashboard`
+        : profile.role === 'client'
+          ? `/client/${profile.id}/dashboard`
+          : '/dashboard';
+
+      router.replace(redirectPath);
     } catch (error) {
       console.error('Login error:', error);
       notifications.show({
